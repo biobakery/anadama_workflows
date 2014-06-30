@@ -1,6 +1,6 @@
 import os.path
 
-from anadama.util import addtag, addext, guess_seq_filetype,
+from anadama.util import addtag, addext, guess_seq_filetype
 from anadama.util import biopython_to_metaphlan, dict_to_cmd_opts, new_file
 
 from . import (
