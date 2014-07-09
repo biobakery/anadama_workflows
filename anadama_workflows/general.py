@@ -36,7 +36,7 @@ def fastq_split(files_list, name, dir, reverse_complement=False):
     qual_fname = new_file(addext(name, "qual"), basedir=dir)
 
     seqtype = guess_seq_filetype(files_list[0])
-    cmd = ("mibc_fastq_split"+
+    cmd = ("fastq_split"+
            " --fasta_out="+fasta_fname+
            " --qual_out="+qual_fname+
            " --format="+seqtype)
@@ -58,7 +58,7 @@ def sequence_convert(files_list, output_file=None, format_to="fastq"):
     if not output_file:
         output_file = files_list[0] + "_merged."+format_to
 
-    cmd = ("mibc_convert"
+    cmd = ("sequence_convert"
            + " --format="+guess_seq_filetype(files_list[0])
            + " --to="+format_to
            + " "+" ".join(files_list)
