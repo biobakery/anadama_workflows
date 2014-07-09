@@ -118,3 +118,46 @@ def merge_otu_tables(files_list, name, output_dir):
         "file_dep": files_list
     }
 
+
+def picrust(file, **opts):
+    """Workflow to predict metagenome functional content from 16S OTU tables
+    """
+    norm_out = new_file(addext(file, "normalized_otus.biom"))
+    predict_out = new_file(addext(file, "picrust.biom"))
+
+    all_opts = { 'tab_in' : 0,#flag if input is a tabulated file
+                 'tab_out' : 0, #flag if output file is to be tabulated
+                 'gg_version' : '', #greengenes version
+                 't' : '', #empty for KO, else can be COG or RFAM
+                 'with_confidence' : 0, #flag if want to output confidence intervals
+                 'custom' : '', #if not empty, use a custom trait to predict metagenomes, specified by a file
+    }
+    all_opts.update(opts)
+
+    cmd1 = ("normalize_by_copy_number.py "
+            + "-i " + file
+            + " -o " + norm_out)
+    if all_opts['gg_version']:
+        cmd1 += " -g " + all_opts['gg_version']
+    if all_opts['tab_in']:
+        cmd1 += " -f"
+
+    cmd2 = ("predict_metagenomes.py "
+            + "-i " + norm_out
+            + " -o " + predict_out)
+    if all_opts['gg_version']:
+        cmd2 += " -g " + all_opts['gg_version']
+    if all_opts['tab_out']:
+        cmd2 += " -f"
+    if all_opts['t']:
+        cmd2 += " -t " + all_opts['t']
+    if all_opts['with_confidence']:
+        cmd2 += " --with_confidence"
+    if all_opts['custom']:
+        cmd2 += " -c " + all_opts['custom']
+
+    return dict(name = "picrust:"+predict_out,
+                actions = [cmd1, cmd2],
+                file_dep = [file],
+                targets = [predict_out, norm_out])
+
