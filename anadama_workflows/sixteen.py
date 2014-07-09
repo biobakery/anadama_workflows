@@ -134,7 +134,7 @@ def picrust(file, **opts):
     }
     all_opts.update(opts)
 
-    cmd1 = ("normalize_by_copy_number.py "
+    cmd1 = ("picrust_cmd normalize_by_copy_number.py "
             + "-i " + file
             + " -o " + norm_out)
     if all_opts['gg_version']:
@@ -142,7 +142,7 @@ def picrust(file, **opts):
     if all_opts['tab_in']:
         cmd1 += " -f"
 
-    cmd2 = ("predict_metagenomes.py "
+    cmd2 = ("picrust_cmd predict_metagenomes.py "
             + "-i " + norm_out
             + " -o " + predict_out)
     if all_opts['gg_version']:
