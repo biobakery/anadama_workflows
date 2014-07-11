@@ -82,7 +82,7 @@ def pick_otus_closed_ref(input_dir, output_dir, qiime_opts={}):
            " -f"+
            " "+opts)
 
-    revcomp_cmd = ("mibc_convert"+
+    revcomp_cmd = ("sequence_convert"+
                    " --format=fasta"+
                    " --to=fasta "+
                    " -r"+
