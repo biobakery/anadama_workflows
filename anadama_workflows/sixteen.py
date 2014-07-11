@@ -6,7 +6,7 @@ import itertools
 from os.path import join
 
 # should probably import from anadama directly?
-from doit.action import CmdAction
+from anadama.action import CmdAction
 from doit.exceptions import TaskError, TaskFailed
 
 from anadama.util import addext, new_file, dict_to_cmd_opts, guess_seq_filetype
@@ -64,7 +64,7 @@ def demultiplex(input_dir, name_base, qiime_opts={}):
     }
 
 
-def pick_otus_closed_ref(input_dir, output_dir, qiime_opts={}):
+def pick_otus_closed_ref(input_dir, output_dir, verbose=False, qiime_opts={}):
     input_fname = new_file("seqs.fna", basedir=input_dir)
     output_fname = new_file("otu_table.biom", basedir=output_dir)
     revcomp_fname = new_file("revcomp.fna", basedir=input_dir)
@@ -90,10 +90,12 @@ def pick_otus_closed_ref(input_dir, output_dir, qiime_opts={}):
                    " > "+revcomp_fname)
 
     def run(targets):
-        ret = CmdAction(cmd.format(input_fname)).execute()
+        ret = CmdAction(cmd.format(input_fname), 
+                        verbose=verbose).execute()
         if type(ret) in (TaskError, TaskFailed):
             CmdAction(revcomp_cmd).execute()
-            return CmdAction(cmd.format(revcomp_fname)).execute()
+            return CmdAction(cmd.format(revcomp_fname), 
+                             verbose=verbose).execute()
         else:
             return ret
         
