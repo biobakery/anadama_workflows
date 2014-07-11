@@ -11,12 +11,16 @@ from .sixteen import (
     pick_otus_closed_ref, 
     merge_otu_tables
 )
+from .association import (
+    maaslin
+)
 
 all = (
     metaphlan2, humann,
     bowtie2_align, 
     extract, fastq_split, sequence_convert,
-    write_map, demultiplex, pick_otus_closed_ref, merge_otu_tables
+    write_map, demultiplex, pick_otus_closed_ref, merge_otu_tables,
+    maaslin
 )
 
 
