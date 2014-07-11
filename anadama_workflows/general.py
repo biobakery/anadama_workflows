@@ -31,7 +31,7 @@ def extract(files_list):
     }
 
 
-def fastq_split(files_list, name, dir, reverse_complement=False):
+def fastq_split(files_list, name, dir, reverse_complement=False, trim=4):
     fasta_fname = new_file(addext(name, "fa"), basedir=dir)
     qual_fname = new_file(addext(name, "qual"), basedir=dir)
 
@@ -39,7 +39,8 @@ def fastq_split(files_list, name, dir, reverse_complement=False):
     cmd = ("fastq_split"+
            " --fasta_out="+fasta_fname+
            " --qual_out="+qual_fname+
-           " --format="+seqtype)
+           " --format="+seqtype+
+           " --trim="+str(trim))
 
     if reverse_complement:
         cmd += " -r"

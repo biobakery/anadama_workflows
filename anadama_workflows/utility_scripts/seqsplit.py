@@ -25,17 +25,21 @@ opts_list = [
     optparse.make_option('-f', '--fasta_out', action="store", 
                          dest="fasta_outfile", type="string",
                          help="File to which to write fasta records"),
-     optparse.make_option('-q', '--qual_out', action="store", 
+    optparse.make_option('-q', '--qual_out', action="store", 
                          dest="qual_outfile", type="string", default=None,
                          help="File to which to write qual records"),
-     optparse.make_option('-r', '--reverse_compliment', action="store_true", 
-                          default=False,
-                          help="Write the sequence reverse compliment. "+
-                          "Defaults to True"),
-     optparse.make_option('-l', '--logging', action="store", type="string",
-                          dest="logging", default="INFO",
-                          help="Logging verbosity, options are debug, info, "+
-                          "warning, and critical")
+    optparse.make_option('-r', '--reverse_compliment', action="store_true", 
+                         default=False,
+                         help="Write the sequence reverse compliment. "+
+                         "Defaults to True"),
+    optparse.make_option('-l', '--logging', action="store", type="string",
+                         dest="logging", default="INFO",
+                         help="Logging verbosity, options are debug, info, "+
+                         "warning, and critical"),
+    optparse.make_option('-t', '--trim', action="store", type="int",
+                         dest="trim", default=4,
+                         help="Trim the first x number of symbols from"
+                         " the sequence. Default 4")
 ]
 
 def fa(record):
@@ -96,9 +100,10 @@ def main():
 
         for fp in args:
             for i, record in enumerate(SeqIO.parse(fp, opts.from_format)):
-                tmp = record.letter_annotations.pop('phred_quality')[4:]
-                record.seq = record.seq[4:]
-                record.letter_annotations['phred_quality'] = tmp
+                if opts.trim:
+                    tmp = record.letter_annotations.pop('phred_quality')
+                    record.seq = record.seq[opts.trim:]
+                    record.letter_annotations['phred_quality'] = tmp[opts.trim:]
                 try:
                     output(record)
                 except BiopythonParserWarning as e:
