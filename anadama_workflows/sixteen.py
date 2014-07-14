@@ -120,7 +120,15 @@ def merge_otu_tables(files_list, name, output_dir):
 
 
 def picrust(file, **opts):
-    """Workflow to predict metagenome functional content from 16S OTU tables
+    """Workflow to predict metagenome functional content from 16S OTU tables.
+
+	Optional options:
+	tab_in		use 1 if the input is a tabulated file (default:0)
+	tab_out		use 1 if the output file is to be tabulated (default:0)
+	gg_version	provide a string containing the greengenes version to be used (default:most recent version)
+	t		option to use a different type of prediction (default:KO)
+	with_confidence	use 1 to output confidence intervals (default:0)
+	custom		specify a file containing a custom trait to predict metagenomes
     """
     norm_out = new_file(addext(file, "normalized_otus.biom"))
     predict_out = new_file(addext(file, "picrust.biom"))
