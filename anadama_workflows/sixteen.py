@@ -9,7 +9,13 @@ from os.path import join
 from anadama.action import CmdAction
 from doit.exceptions import TaskError, TaskFailed
 
-from anadama.util import addext, new_file, dict_to_cmd_opts, guess_seq_filetype
+from anadama.util import (
+    addext, 
+    addtag,
+    new_file,
+    dict_to_cmd_opts, 
+    guess_seq_filetype
+)
 
 from . import ( 
     settings
@@ -42,32 +48,30 @@ def write_map(sample_group, sample_dir):
     }
 
 
-def demultiplex(input_dir, name_base, qiime_opts={}):
-    map_fname = new_file("map.txt", basedir=input_dir)
-    fasta_fname = new_file(addext(name_base, 'fa'), basedir=input_dir)
-    qual_fname = new_file(addext(name_base, 'qual'), basedir=input_dir)
-    output_fname = new_file("seqs.fna", basedir=input_dir)
+def demultiplex(map_fname, fasta_fname, qual_fname, output_fname,
+                qiime_opts={}):
+    output_dir=os.path.dirname(output_fname)
     opts = dict_to_cmd_opts(qiime_opts)
     
     cmd = ("qiime_cmd split_libraries.py"+
            " --map="+map_fname+
            " --fasta="+fasta_fname+
            " --qual="+qual_fname+
-           " --dir-prefix="+input_dir+
+           " --dir-prefix="+output_dir+
            " "+opts)
 
     return {
-        "name": "demultiplex:"+name_base,
+        "name": "demultiplex:"+fasta_fname,
         "actions": [cmd],
         "file_dep": [map_fname, fasta_fname, qual_fname],
         "targets": [output_fname]
     }
 
 
-def pick_otus_closed_ref(input_dir, output_dir, verbose=False, qiime_opts={}):
-    input_fname = new_file("seqs.fna", basedir=input_dir)
+def pick_otus_closed_ref(input_fname, output_dir, verbose=False, qiime_opts={}):
     output_fname = new_file("otu_table.biom", basedir=output_dir)
-    revcomp_fname = new_file("revcomp.fna", basedir=input_dir)
+    revcomp_fname = new_file(
+        "revcomp.fna", basedir=os.path.dirname(input_fname))
 
     default_opts = {
         "taxonomy_fp": settings.workflows.sixteen.otu_taxonomy,
@@ -124,8 +128,8 @@ def merge_otu_tables(files_list, name, output_dir):
 def picrust(file, **opts):
     """Workflow to predict metagenome functional content from 16S OTU tables
     """
-    norm_out = new_file(addext(file, "normalized_otus.biom"))
-    predict_out = new_file(addext(file, "picrust.biom"))
+    norm_out = new_file(addtag(file, "normalized_otus"))
+    predict_out = new_file(addtag(file, "picrust"))
 
     all_opts = { 'tab_in' : 0,#flag if input is a tabulated file
                  'tab_out' : 0, #flag if output file is to be tabulated
