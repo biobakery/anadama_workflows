@@ -24,7 +24,7 @@ opts_list = [
     optparse.make_option('-t', '--to', action="store", 
                          dest="to_format", type="string", default="fasta",
                          help="The file format to convert to"),
-    optparse.make_option('-r', '--reverse_compliment', action="store_true", 
+    optparse.make_option('-r', '--reverse_complement', action="store_true", 
                          dest="revcomp", 
                          help="Write the reverse complement sequence"),
      optparse.make_option('-l', '--logging', action="store", type="string",
