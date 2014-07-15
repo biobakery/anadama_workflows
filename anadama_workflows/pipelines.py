@@ -13,20 +13,20 @@ from . import general, sixteen, wgs, alignment
 class SixteenSPipeline(Pipeline):
 
     def __init__(self,
-                 samples=list(), # or possibly string (handled later)
+                 sample_metadata=list(), # or possibly string (handled later)
                  raw_seq_files=list(),
                  demuxed_fasta_files=list(), # assumed to be QC'd
                  otu_tables=list(),
                  products_dir=str(),
                  pathway_options=dict(),
                  *args, **kwargs):
-        self.samples = samples
+        self.sample_metadata = sample_metadata
         self.raw_seq_files = raw_seq_files
         self.demuxed_fasta_files = demuxed_fasta_files
         self.otu_tables = otu_tables
 
-        if type(samples) is str:
-            self.samples = util.deserialize_map_file(samples)
+        if type(sample_metadata) is str:
+            self.sample_metadata = util.deserialize_map_file(samples)
 
         if not products_dir:
             products_dir = settings.workflows.product_directory
@@ -63,8 +63,8 @@ class SixteenSPipeline(Pipeline):
 
         # split to fasta, qual, map.txt triplets and demultiplex
         firstitem = itemgetter(0)
-        self.samples = sorted(self.samples, key=firstitem)
-        for sample_id, sample_group in groupby(self.samples, firstitem):
+        self.sample_metadata = sorted(self.sample_metadata, key=firstitem)
+        for sample_id, sample_group in groupby(self.sample_metadata, firstitem):
             sample_dir = join(self.products_dir, sample_id)
             sample_group = list(sample_group)
             map_fname = util.new_file("map.txt", basedir=sample_dir)
