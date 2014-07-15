@@ -10,6 +10,16 @@ from . import (
 )
 
 def extract(files_list):
+    """Task for converting a list of input files from their zipped to
+    their unzipped equivalent.
+
+    :param files_list: List; The input files to decompress
+
+    External dependencies:
+      - gunzip: should come with gzip
+      - bunzip2: Should come with the bzip2 package
+
+    """
     actions = list()
     targets = list()
     for fname in files_list:
@@ -33,6 +43,27 @@ def extract(files_list):
 
 def fastq_split(files_list, fasta_fname, qual_fname,
                 reverse_complement=False, trim=4, from_format=None):
+    """ Task for concatenating and converting a list of sequence files
+    into a fasta file and a qual file. 
+
+    :param files_list: List; List of input files
+    :param fasta_fname: String; File name for output fasta file
+    :param qual_fname: String; File name for output qual file
+    :keyword reverse_complement: Boolean; Set to True if the resulting 
+                                 sequence files should be the reverse 
+                                 complement of the input sequences
+    :keyword trim: Integer; trim these number of sequence items from the 
+                   start of the sequence 
+    :keyword from_format: String; biopython-recognized string to convert
+                                  the sequence from. If not specified, we 
+                                  guess with ``guess_seq_filetype``
+
+    External dependencies:
+      - fastq_split: python script that should come pre-installed with
+        the anadama_workflows module
+
+    """
+
     if not from_format:
         seqtype = guess_seq_filetype(files_list[0])
     else:
@@ -56,7 +87,27 @@ def fastq_split(files_list, fasta_fname, qual_fname,
     }
 
 
-def sequence_convert(files_list, output_file=None, format_to="fastq"):
+def sequence_convert(files_list, output_file=None, reverse_complement=False,
+                     from_format=None, format_to="fastq"):
+    """ Task for converting between sequence file formats.
+
+    :param files_list: List; List of input files
+    :param output_file: String; File name for output file
+    :keyword reverse_complement: Boolean; Set to True if the resulting 
+                                 sequence file should be the reverse 
+                                 complement of the input sequences
+    :keyword from_format: String; biopython-recognized string to convert
+                                  the sequence from. If not specified, we 
+                                  guess with ``guess_seq_filetype``
+    :keyword format_to: String; output file format as recognized by 
+                        biopython
+
+    External dependencies:
+      - sequence_convert: python script that should come pre-installed with
+        the anadama_workflows module
+    
+    """
+
     if not output_file:
         output_file = files_list[0] + "_merged."+format_to
 
