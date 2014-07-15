@@ -12,11 +12,12 @@ def bowtie2_align(infiles_list, output_file, **opts):
     all_opts.update(opts)
 
     cmd = ("bowtie2 "
-           + " -x "+all_opts["reference_db"]
-           + " -p "+str(all_opts["threads"])
+           + " -x "+all_opts.pop('reference_db')
+           + " -p "+str(all_opts.pop('threads'))
            + " -U "+",".join(infiles_list)
            + " --no-head"
            + " --very-sensitive"
+           + " "+dict_to_cmd_opts(all_opts)
            + " > "+output_file)
     
     return {
