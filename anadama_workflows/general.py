@@ -60,11 +60,18 @@ def sequence_convert(files_list, output_file=None, format_to="fastq"):
     if not output_file:
         output_file = files_list[0] + "_merged."+format_to
 
+    if not from_format:
+        from_format = guess_seq_filetype(files_list[0])
+
     cmd = ("sequence_convert"
-           + " --format="+guess_seq_filetype(files_list[0])
-           + " --to="+format_to
-           + " "+" ".join(files_list)
-           + " > "+output_file)
+           + " --format="+from_format
+           + " --to="+format_to )
+
+    if reverse_complement:
+        cmd += " --reverse_complement"
+
+    cmd += ( " "+" ".join(files_list)
+             + " > "+output_file)
 
     return {
         "name": "sequence_convert_to_%s: %s..."%(format_to, files_list[0]),
