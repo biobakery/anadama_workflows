@@ -18,6 +18,7 @@ class SixteenSPipeline(Pipeline):
                  demuxed_fasta_files=list(), # assumed to be QC'd
                  otu_tables=list(),
                  products_dir=str(),
+                 pathway_options=dict(),
                  *args, **kwargs):
         self.samples = samples
         self.raw_seq_files = raw_seq_files
@@ -30,6 +31,22 @@ class SixteenSPipeline(Pipeline):
         if not products_dir:
             products_dir = settings.workflows.product_directory
         self.products_dir = os.path.realpath(products_dir)
+
+        self.options = {
+            'write_map':            { },
+            'fastq_split':          { },
+            'demultiplex':          {
+                'qiime_opts': { 
+                    'M': '2'    
+                }
+            },
+            'pick_otus_closed_ref': { },
+            'picrust':              { },
+            'merge_otu_tables':     {
+                'name': 'all_otu_tables_merged.biom'
+            }
+        }
+        self.options.update(pathway_options)
         
         super(SixteenSPipeline, self).__init__(*args, **kwargs)
 
@@ -51,42 +68,52 @@ class SixteenSPipeline(Pipeline):
             sample_dir = join(self.products_dir, sample_id)
             sample_group = list(sample_group)
             map_fname = util.new_file("map.txt", basedir=sample_dir)
-            yield sixteen.write_map(sample_group, sample_dir)
+            yield sixteen.write_map(sample_group, sample_dir, 
+                                    **self.options.get('write_map', dict()))
 
             files_list = self._filter_files_for_sample(
                 self.raw_seq_files, sample_group)
             fasta_fname = util.new_file(sample_id+".fa", basedir=sample_dir)
             qual_fname = util.new_file(sample_id+".qual", basedir=sample_dir)
             yield general.fastq_split(
-                files_list, fasta_fname, qual_fname)
+                files_list, fasta_fname, qual_fname, 
+                **self.options.get('fastq_split', dict())
+            )
 
-            bcode_type = self._determine_barcode_type(sample_group)
+            qiime_opts = self.options['demultiplex'].pop('qiime_opts', {})
+            if 'barcode-type' not in qiime_opts:
+                qiime_opts['barcode-type'] = self._determine_barcode_type(
+                    sample_group)
             demuxed_fname = util.new_file("seqs.fna", basedir=sample_dir)
             yield sixteen.demultiplex(
                 map_fname, fasta_fname, qual_fname, demuxed_fname,
-                qiime_opts={
-                    "barcode-type": bcode_type,
-                    "M": "2"
-                })
+                qiime_opts=qiime_opts,
+                **self.options.get('demultiplex', dict())
+            )
             self.demuxed_fasta_files.append(demuxed_fname)
 
         # do closed reference otu picking
         for fasta_fname in self.demuxed_fasta_files:
             otu_dir = join(os.path.dirname(fasta_fname), "otus")
             yield sixteen.pick_otus_closed_ref(
-                input_fname=fasta_fname, output_dir=otu_dir)
+                input_fname=fasta_fname, output_dir=otu_dir,
+                **self.options.get('pick_otus_closed_ref', dict())
+            )
             self.otu_tables.append(join(otu_dir, "otu_table.biom"))
 
         # infer genes and pathways with picrust
         for otu_table in self.otu_tables:
-            yield sixteen.picrust(otu_table)
+            yield sixteen.picrust(
+                otu_table, 
+                **self.options.get('picrust', dict())
+            )
 
         # now merge all otus together
         if self.otu_tables:
             yield sixteen.merge_otu_tables(
                 self.otu_tables,
-                name="all_otu_tables_merged.biom",
-                output_dir=self.products_dir
+                output_dir=self.products_dir,
+                **self.options.get('merge_otu_tables', dict())
             )
 
 
@@ -120,6 +147,7 @@ class WGSPipeline(Pipeline):
                  intermediate_fastq_files=list(),
                  alignment_result_files=list(),
                  products_dir=str(),
+                 pathway_options=dict(),
                  *args, **kwargs):
         """raw_seq_files can be a list of lists, if you want to aggregate
         results by something other than by file
@@ -131,6 +159,16 @@ class WGSPipeline(Pipeline):
         if not products_dir:
             products_dir = settings.workflows.product_directory
         self.products_dir = os.path.realpath(products_dir)
+
+        self.options = {
+            'sequence_convert': { }, # no defaults for sequence_convert
+            'metaphlan2':       { },
+            'bowtie2_align':    { },
+            'humann':           { }
+        }
+        self.options.update(pathway_options)
+
+
         super(WGSPipeline, self).__init__(*args, **kwargs)
         
 
@@ -143,15 +181,24 @@ class WGSPipeline(Pipeline):
             fastq_file = util.new_file( basename(files[0])+"_merged.fastq",
                                         basedir=self.products_dir )
 
-            yield general.sequence_convert(files, fastq_file)
+            yield general.sequence_convert(
+                files, fastq_file, 
+                **self.options.get('sequence_convert', dict())
+            )
             self.intermediate_fastq_files.append(fastq_file)
-            yield wgs.metaphlan2([fastq_file])
+            yield wgs.metaphlan2(
+                [fastq_file],
+                **self.options.get('metaphlan2', dict())
+            )
             
         # Next align the fastq files against the kegg proks reduced db
         for fastq_file in self.intermediate_fastq_files:
             alignment_file = fastq_file+".sam"
             self.alignment_result_files.append(alignment_file)
-            yield alignment.bowtie2_align([fastq_file], alignment_file)
+            yield alignment.bowtie2_align(
+                [fastq_file], alignment_file
+                **self.options.get('bowtie2_align', dict())
+            )
 
         # Finally, HUMAnN all alignment files
         for alignment_file in self.alignment_result_files:
@@ -159,6 +206,9 @@ class WGSPipeline(Pipeline):
             # util.new_file does that for us
             new_basedir = alignment_file+"_humann"
             sample_dir = util.new_file('SConstruct', basedir=new_basedir)
-            yield wgs.humann([alignment_file], workdir=sample_dir)
+            yield wgs.humann(
+                [alignment_file], workdir=sample_dir
+                **self.options.get('humann', dict())
+            )
 
 
