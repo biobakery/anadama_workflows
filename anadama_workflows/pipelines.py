@@ -196,7 +196,7 @@ class WGSPipeline(Pipeline):
             alignment_file = fastq_file+".sam"
             self.alignment_result_files.append(alignment_file)
             yield alignment.bowtie2_align(
-                [fastq_file], alignment_file
+                [fastq_file], alignment_file,
                 **self.options.get('bowtie2_align', dict())
             )
 
@@ -207,7 +207,7 @@ class WGSPipeline(Pipeline):
             new_basedir = alignment_file+"_humann"
             sample_dir = util.new_file('SConstruct', basedir=new_basedir)
             yield wgs.humann(
-                [alignment_file], workdir=sample_dir
+                [alignment_file], workdir=sample_dir,
                 **self.options.get('humann', dict())
             )
 
