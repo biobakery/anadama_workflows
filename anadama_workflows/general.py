@@ -10,7 +10,7 @@ from . import (
 )
 
 def extract(files_list):
-    """Task for converting a list of input files from their zipped to
+    """Workflow for converting a list of input files from their zipped to
     their unzipped equivalent.
 
     :param files_list: List; The input files to decompress
@@ -43,7 +43,7 @@ def extract(files_list):
 
 def fastq_split(files_list, fasta_fname, qual_fname,
                 reverse_complement=False, trim=4, from_format=None):
-    """ Task for concatenating and converting a list of sequence files
+    """ Workflow for concatenating and converting a list of sequence files
     into a fasta file and a qual file. 
 
     :param files_list: List; List of input files
@@ -89,7 +89,7 @@ def fastq_split(files_list, fasta_fname, qual_fname,
 
 def sequence_convert(files_list, output_file=None, reverse_complement=False,
                      from_format=None, format_to="fastq"):
-    """ Task for converting between sequence file formats.
+    """ Workflow for converting between sequence file formats.
 
     :param files_list: List; List of input files
     :param output_file: String; File name for output file
