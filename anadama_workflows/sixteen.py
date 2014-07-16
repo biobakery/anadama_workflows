@@ -22,6 +22,18 @@ from . import (
 )
 
 def write_map(sample_group, sample_dir):
+    """Workflow to write a new map.txt file from a list of samples.  The
+    resultant map.txt file is always named 'map.txt' and is placed in
+    the ``sample_dir`` directory
+    
+    :param sample_group: List of namedtuples; A list of samples as
+                         deserialized by anadama.util.deserialize_map_file
+    :param sample_dir: String; Directory path indicating where to write 
+                       the map.txt file
+
+    """
+
+
     map_fname = new_file("map.txt", basedir=sample_dir)
 
     def _write(targets):
@@ -50,6 +62,32 @@ def write_map(sample_group, sample_dir):
 
 def demultiplex(map_fname, fasta_fname, qual_fname, output_fname,
                 qiime_opts={}):
+    """Workflow to demultiplex a barcoded set of 16S sequences from a
+    single run. This workflow wraps the qiime split_libraries.py
+    script. For information on what the split_libraries.py script
+    does, check out the qiime documentation:
+      - http://qiime.org/tutorials/tutorial.html#assign-samples-to-multiplex-reads
+      - http://qiime.org/scripts/split_libraries.html
+
+    :param map_fname: String; File path location of the map.txt metdata file
+    :param fasta_fname: String; File path to the input, multiplex, fasta files
+    :param qual_fname: String; File path to the qual file corresponding 
+                       to ``fasta_fname``.
+    :param output_fname: String; File path to where the demultiplexed reads 
+                         will be saved in fasta format.
+    :keyword qiime_opts: Dictionary; A dictionary of command line options to
+                         be passed to the wrapped split_libraries.py script. 
+                         No - or -- flags are necessary; the correct - or --t
+                         flags are inferred based on the length of the option. 
+                         For boolean options, use the key/value pattern 
+                         of { "my-option": "" }.
+
+    External dependencies:
+      - Qiime 1.8.0: https://github.com/qiime/qiime-deploy
+
+    """
+    
+    
     output_dir=os.path.dirname(output_fname)
     opts = dict_to_cmd_opts(qiime_opts)
     
@@ -69,6 +107,35 @@ def demultiplex(map_fname, fasta_fname, qual_fname, output_fname,
 
 
 def pick_otus_closed_ref(input_fname, output_dir, verbose=False, qiime_opts={}):
+    """Workflow to perform OTU picking, generates a biom-formatted OTU
+    table from demultiplexed 16S reads. This workflow (in general
+    terms) wraps qiime's pick_closed_reference_otus.py, which itself
+    wraps either uclust or usearch. Note that uclust and usearch
+    require a fairly large memory footprint (1.5-2.0G in some cases).
+
+    :param input_fname: String; File path to the input,
+                        fasta-formatted 16S sequences
+    :param output_dir: String; Path to the directory where the output OTU 
+                       table will be saved as 'otu_table.biom'. Other 
+                       qiime-specific logs will go there, too.
+    :keyword verbose: Boolean: set to true to print the commands that are 
+                      run as they are run
+    :keyword qiime_opts: Dictionary; A dictionary of command line options to
+                         be passed to the wrapped split_libraries.py script. 
+                         No - or -- flags are necessary; the correct - or --t
+                         flags are inferred based on the length of the option. 
+                         For boolean options, use the key/value pattern 
+                         of { "my-option": "" }.
+
+    External dependencies:
+      - Qiime 1.8.0: https://github.com/qiime/qiime-deploy
+      - USEARCH: (only if using the usearch option) http://www.drive5.com/usearch/
+
+    Resource utilization:
+      - RAM: >1.5 G
+
+    """
+
     output_fname = new_file("otu_table.biom", basedir=output_dir)
     revcomp_fname = new_file(
         "revcomp.fna", basedir=os.path.dirname(input_fname))
@@ -113,6 +180,18 @@ def pick_otus_closed_ref(input_fname, output_dir, verbose=False, qiime_opts={}):
 
 
 def merge_otu_tables(files_list, name, output_dir):
+    """Workflow to merge OTU tables into a single OTU table. Also accepts
+    biom-formatted OTU tables.
+
+    :param files_list: List of strings; A list of file paths to the input 
+                       OTU tables to be merged
+    :param name: String; The file name of the merged OTU table
+    :param output_dir: String; The base directory of the merged OTU table
+
+    External dependencies:
+      - Qiime 1.8.0: https://github.com/qiime/qiime-deploy
+
+    """
     output_file = new_file(name, basedir=output_dir)
     cmd = "qiime_cmd merge_otu_tables.py -i {filenames} -o {output}"
     cmd = cmd.format( filenames = ",".join(files_list), 
@@ -128,13 +207,23 @@ def merge_otu_tables(files_list, name, output_dir):
 def picrust(file, **opts):
     """Workflow to predict metagenome functional content from 16S OTU tables.
 
-	Optional options:
-	tab_in		use 1 if the input is a tabulated file (default:0)
-	tab_out		use 1 if the output file is to be tabulated (default:0)
-	gg_version	provide a string containing the greengenes version to be used (default:most recent version)
-	t		option to use a different type of prediction (default:KO)
-	with_confidence	use 1 to output confidence intervals (default:0)
-	custom		specify a file containing a custom trait to predict metagenomes
+    :param file: String; input OTU table.
+    :keyword tab_in: Boolean; True if the input is a tabulated 
+                     file (default:0)
+    :keyword tab_out: Boolean; True if the output file is to be
+                      tabulated (default:False)
+    :keyword gg_version: String; the greengenes version to be used
+                         (default:most recent version)
+    :keyword t: String; option to use a different type of prediction
+                   (default:KO)
+    :keyword with_confidence: Boolean; Set to True to output confidence 
+                              intervals (default:0)
+    :keyword custom: String; specify a file containing a custom trait to 
+                     predict metagenomes
+
+    External Dependencies:
+      - PICRUSt: Version 1.0.0, http://picrust.github.io/picrust/install.html#install
+
     """
     norm_out = new_file(addtag(file, "normalized_otus"))
     predict_out = new_file(addtag(file, "picrust"))
