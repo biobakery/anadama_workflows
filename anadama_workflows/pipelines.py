@@ -18,11 +18,13 @@ class SixteenSPipeline(Pipeline):
       * Decompress any compressed sequences
       * Aggregate samples by SampleID.
       * For each sample:
+
         - Write map.txt entries for that SampleID to its own map.txt file
         - Convert all sequence files for that SampleID into fasta and qual
         - Demultiplex and quality filter
         - Perform closed reference OTU picking against greengenes
         - Infer genes, pathways with picrust
+
       * Finally, merge all OTU tables
 
     Workflows used:
@@ -199,10 +201,10 @@ class WGSPipeline(Pipeline):
 
     Steps:
       * For each sequence set:
+
         - Convert the sequences and concatenate into a single fastq file
         - Perform taxonomic profiling with metaphlan2
-        - Align the fastq file agains the KEGG proks reduced dataset with
-          bowtie2
+        - Align the fastq file agains the KEGG proks reduced dataset with bowtie2
         - Infer pathway, gene lists with HUMAnN
 
 

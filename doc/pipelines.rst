@@ -7,3 +7,4 @@ Pipelines
 .. automodule:: anadama_workflows.pipelines
    :members:
    :undoc-members:
+   :special-members:

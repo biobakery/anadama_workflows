@@ -66,8 +66,8 @@ def demultiplex(map_fname, fasta_fname, qual_fname, output_fname,
     single run. This workflow wraps the qiime split_libraries.py
     script. For information on what the split_libraries.py script
     does, check out the qiime documentation:
-      - http://qiime.org/tutorials/tutorial.html#assign-samples-to-multiplex-reads
-      - http://qiime.org/scripts/split_libraries.html
+    - http://qiime.org/tutorials/tutorial.html#assign-samples-to-multiplex-reads
+    - http://qiime.org/scripts/split_libraries.html
 
     :param map_fname: String; File path location of the map.txt metdata file
     :param fasta_fname: String; File path to the input, multiplex, fasta files
