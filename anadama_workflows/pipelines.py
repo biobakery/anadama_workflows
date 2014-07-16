@@ -12,14 +12,64 @@ from . import general, sixteen, wgs, alignment
 
 class SixteenSPipeline(Pipeline):
 
+    """Pipeline for analyzing 16S data.
+
+    Steps:
+      * Decompress any compressed sequences
+      * Aggregate samples by SampleID.
+      * For each sample:
+        - Write map.txt entries for that SampleID to its own map.txt file
+        - Convert all sequence files for that SampleID into fasta and qual
+        - Demultiplex and quality filter
+        - Perform closed reference OTU picking against greengenes
+        - Infer genes, pathways with picrust
+      * Finally, merge all OTU tables
+
+    Workflows used:
+      * anadama_workflows.general.extract
+      * anadama_workflows.sixteen.write_map
+      * anadama_workflows.general.fastq_split
+      * anadama_workflows.sixteen.demultiplex
+      * anadama_workflows.sixteen.pick_otus_closed_ref
+      * anadama_workflows.sixteen.picrust
+      * anadama_workflows.sixteen.merge_otu_tables
+    """
+
     def __init__(self,
-                 sample_metadata, # list or possibly string (handled later)
+                 sample_metadata,
                  raw_seq_files=list(),
                  demuxed_fasta_files=list(), # assumed to be QC'd
                  otu_tables=list(),
                  products_dir=str(),
                  pathway_options=dict(),
                  *args, **kwargs):
+
+        """Initialize the pipeline.
+
+        :param sample_metadata: String or list of namedtuples; sample metadata 
+                                as deserialized by 
+                                ``anadama.util.deserialize_map_file``. If a 
+                                string is given, the string is treated as a path 
+                                to the qiime-formatted map.txt for all samples. 
+                                For more information about sample-level 
+                                metadata, refer to the qiime documentation: 
+                                http://qiime.org/tutorials/tutorial.html#mapping-file-tab-delimited-txt
+        :keyword raw_seq_files: List of strings; File paths to raw 16S sequence
+                                files. Supported sequence file formats are 
+                                whatever biopython recognizes.
+        :keyword demuxed_fasta_files: List of strings; File paths to 
+                                      demultiplexed fasta files. Assumed to be
+                                      quality-checked and ready to be used in
+                                      OTU picking.
+        :keyword otu_tables: List of strings; File paths to produced OTU tables
+                             ready to be fed into picrust for gene, pathway 
+                             inference.
+        :keyword products_dir: String; Directory path for where outputs will 
+                               be saved.
+        :keyword pathway_options: Dictionary; **opts to be fed into the 
+                                  respective workflow functions.
+        """
+
         self.sample_metadata = sample_metadata
         self.raw_seq_files = raw_seq_files
         self.demuxed_fasta_files = demuxed_fasta_files
@@ -143,14 +193,49 @@ class SixteenSPipeline(Pipeline):
 
 class WGSPipeline(Pipeline):
 
+    """Pipeline for analyzing whole metagenome shotgun sequence data.
+    Produces taxonomic profiles with metaphlan2 and gene, pathway
+    lists with HUMAnN
+
+    Steps:
+      * For each sequence set:
+        - Convert the sequences and concatenate into a single fastq file
+        - Perform taxonomic profiling with metaphlan2
+        - Align the fastq file agains the KEGG proks reduced dataset with
+          bowtie2
+        - Infer pathway, gene lists with HUMAnN
+
+
+    Workflows used:
+      * anadama_workflows.general.sequence_convert
+      * anadama_workflows.wgs.metaphlan2
+      * anadama_workflows.alignment.bowtie2
+      * anadama_workflows.wgs.humann
+
+    """
+
     def __init__(self, raw_seq_files=list(), 
                  intermediate_fastq_files=list(),
                  alignment_result_files=list(),
                  products_dir=str(),
                  pathway_options=dict(),
                  *args, **kwargs):
-        """raw_seq_files can be a list of lists, if you want to aggregate
-        results by something other than by file
+        """Initialize the pipeline.
+        
+        :keyword raw_seq_files: List of strings; File paths to raw WGS 
+                                sequence reads. raw_seq_files can be a list
+                                of lists, if you want to aggregate results by
+                                something other than by file
+        :keyword intermediate_fastq_files: List of strings; List of files to 
+                                           be fed into metaphlan for taxonomic
+                                           profiling and bowtie2 for alignment
+        :keyword alignment_result_files: List of strings; List of files to be
+                                         fed into HUMAnN for gene, pathway 
+                                         inference.
+        :keyword products_dir: String; Directory path for where outputs will 
+                               be saved.
+        :keyword pathway_options: Dictionary; **opts to be fed into the 
+                                  respective workflow functions.
 
         """
         self.raw_seq_files = raw_seq_files
