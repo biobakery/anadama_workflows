@@ -13,7 +13,7 @@ from . import general, sixteen, wgs, alignment
 class SixteenSPipeline(Pipeline):
 
     def __init__(self,
-                 sample_metadata=list(), # or possibly string (handled later)
+                 sample_metadata, # list or possibly string (handled later)
                  raw_seq_files=list(),
                  demuxed_fasta_files=list(), # assumed to be QC'd
                  otu_tables=list(),
