@@ -44,7 +44,7 @@ def humann(infiles_list, workdir):
         "file_dep": infiles_list,
         "targets": targets,
         "actions": [
-            "cd "+workdir+"; humann_init.py",
+            "cd "+workdir+"; test -f SConstruct || humann_init.py",
             "rm "+os.path.join(humann_input_dir, "*"),
             "ln -s %s %s"%(" ".join(infiles_list), humann_input_dir),
             "cd "+workdir+"; scons"
