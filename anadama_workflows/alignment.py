@@ -5,6 +5,29 @@ from . import (
 )
 
 def bowtie2_align(infiles_list, output_file, **opts):
+    """Workflow to use bowtie2 to map a list of input sequence files
+    against a bowtie2 database. Additional keyword options are used
+    directly as bowtie2 command-line flags.
+
+    :param infiles_list: List of strings; File paths to input search
+                         queries as sequences in fastq format
+    :param output_file: String; File path to the search results, in 
+                        sam format.
+    :keyword reference_db: String; File path to the bowtie2 reference 
+                           db basename. Fed immediately into bowtie2's
+                           -x option.
+    :keyword threads: String or int; Number of threads to use when 
+                      performing the mapping. Uses bowtie2's -p option.
+
+
+    External dependencies:
+      - Bowtie2 2.2.1: http://bowtie-bio.sourceforge.net/bowtie2/index.shtml
+
+    Resource utilization:
+      - Ram: 2.0-3.0G
+      - CPU: 1 core; > 1 core depending on 'threads' option
+    """
+
     all_opts = { # defaults in here
         "reference_db": settings.workflows.alignment.kegg_bowtie2_db,
         "threads": 2,
