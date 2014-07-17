@@ -4,7 +4,6 @@ import logging
 import optparse
 import operator
 from pprint import pformat
-from contextlib import nested
 from functools import partial
 from itertools import ifilter
 
@@ -162,6 +161,9 @@ def main():
                 filter_=generate_filter(opts.lenfilters))
     except IOError as e:
         if e.errno == 32:
+            # That's the error for a broken pipe this usually happens
+            # when someone piped to head or tail. I don't want to
+            # raise an exception
             pass
         else:
             raise
