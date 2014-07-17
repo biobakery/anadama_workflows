@@ -10,7 +10,23 @@ from . import (
 
 
 def humann(infiles_list, workdir):
-    
+    """Workflow to find pathway and gene lists from homology search and/or
+    genome mapping results with HUMAnN.
+
+    :param infiles_list: List of strings; Paths to files to be fed
+                         into HUMAnN.
+    :param workdir: String; Directory path to where a HUMAnN environment 
+                    will be created. Input files are softlinked into this 
+                    directory's 'input' subdirectory. All products can be
+                    found in the ``workdir``'s 'output' subdirectory.
+
+    External dependencies
+      - HUMAnN 0.99b: https://bitbucket.org/biobakery/humann
+
+    Resource utilization:
+      - Ram: 18-32G
+
+    """
     _join = lambda f, label: os.path.join(workdir, "output", f+label)
     targets = []
     for infile in infiles_list:
@@ -37,8 +53,21 @@ def humann(infiles_list, workdir):
         
 
 def metaphlan2(files_list, **opts):
-    """Workflow to transform WGS sequences to OTU tables, now with doit
+    """Workflow to perform taxonomic profiling from whole metagenome
+    shotgun sequences. Additional keyword options are used directly as
+    bowtie2 command-line flags.
+
+    :param files_list: List of strings; File paths to input sequences,
+                       in fastq format.
+    
+    External dependencies
+      - Metaphlan2 @tip: https://bitbucket.org/biobakery/metaphlan2
+
+    Resource utilization:
+      - Ram: 1.5-3.0G
+
     """
+
     infiles_list  = files_list
     outfile       = new_file(addext(files_list[0], "metaphlan2"))
     bowtie2out    = new_file(addext(files_list[0], "bowtie2out.txt"))
