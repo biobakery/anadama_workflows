@@ -1,10 +1,12 @@
-
+import re
 import sys
 import logging
 import optparse
+import operator
 from pprint import pformat
 from contextlib import nested
 from functools import partial
+from itertools import ifilter
 
 import pysam
 from Bio import SeqIO, Seq, SeqRecord
@@ -17,6 +19,12 @@ results to stdout
 Available formats:
 """ 
 
+
+comparators = { '=': operator.eq, '==': operator.eq, 
+                '!': operator.ne, '!=': operator.ne,
+                '>': operator.gt, '>=': operator.ge,
+                '<': operator.lt, '<=': operator.le }
+
 opts_list = [
     optparse.make_option('-f', '--format', action="store", 
                          dest="from_format", type="string",
@@ -27,11 +35,36 @@ opts_list = [
     optparse.make_option('-r', '--reverse_complement', action="store_true", 
                          dest="revcomp", 
                          help="Write the reverse complement sequence"),
-     optparse.make_option('-l', '--logging', action="store", type="string",
+    optparse.make_option('-l', '--logging', action="store", type="string",
                          dest="logging", default="INFO",
                          help="Logging verbosity, options are debug, info, "+
-                         "warning, and critical")
+                         "warning, and critical"),
+    optparse.make_option('-n', '--filter_by_len', action='append', type="string",
+                         dest='lenfilters', help="Filter sequences by length. If"
+                         " a sequence has a length that matches this condition,"
+                         " then it's kept. Otherwise, the sequence is discarded."
+                         " recognized conditions are {}".format(comparators.keys()))
 ]
+
+
+def parse_comparison(s):
+    match = re.match(r'^([><=!]{1,2})(\d+)$', s)
+    if not match:
+        raise ValueError("Unrecognized comparison string;"
+                         " try something like >=60.")
+
+    condition, int_ = match.group(1), int(match.group(2))
+    if condition not in comparators:
+        raise ValueError("Unrecognized condition."
+                         " Try something like >=60.")
+
+    comparator = comparators[condition]
+    return lambda val: comparator(val, int_)
+
+
+def generate_filter(comparison_list):
+    comparator_funcs = [ parse_comparison(str_) for str_ in comparison_list ]
+    return lambda val: all( f(len(val)) for f in comparator_funcs )
 
 
 def my_open(f, *args, **kwargs):
@@ -39,7 +72,6 @@ def my_open(f, *args, **kwargs):
         return sys.stdin
     else:
         return open(f, *args, **kwargs)
-
 
 
 def handle_samfile(file_str, filemode="r"):
@@ -94,12 +126,14 @@ def convert(*input_files, **opts):
     from_format = opts["format"]
     to_format = opts["to"]
     revcomp = opts["revcomp"]
+    filter_func = opts['filter_']
 
     for in_file in input_files:
         logging.debug("Converting %s from %s to %s", 
                       in_file, from_format, to_format)
         sequences = formats[from_format](in_file)
         sequences = maybe_reverse_complement(sequences, revcomp)
+        sequences = ifilter(filter_func, sequences)
         for i, inseq in enumerate(sequences):
             SeqIO.write(inseq, sys.stdout, to_format)
 
@@ -124,7 +158,8 @@ def main():
         convert(*input_files, 
                 format=opts.from_format, 
                 to=opts.to_format,
-                revcomp=opts.revcomp)
+                revcomp=opts.revcomp,
+                filter_=generate_filter(opts.lenfilters))
     except IOError as e:
         if e.errno == 32:
             pass

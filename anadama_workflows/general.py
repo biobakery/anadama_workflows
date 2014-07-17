@@ -88,7 +88,7 @@ def fastq_split(files_list, fasta_fname, qual_fname,
 
 
 def sequence_convert(files_list, output_file=None, reverse_complement=False,
-                     from_format=None, format_to="fastq"):
+                     from_format=None, format_to="fastq", lenfilters_list=list()):
     """ Workflow for converting between sequence file formats.
 
     :param files_list: List; List of input files
@@ -101,10 +101,13 @@ def sequence_convert(files_list, output_file=None, reverse_complement=False,
                                   guess with ``guess_seq_filetype``
     :keyword format_to: String; output file format as recognized by 
                         biopython
+    :keyword lenfilters_list: List of strings; conditions for filtering 
+                              sequences by length.  To keep all sequences 
+                              longer than 60 chars, for example, use >60.
 
     External dependencies:
-      - sequence_convert: python script that should come pre-installed with
-        the anadama_workflows module
+    - sequence_convert: python script that should come pre-installed with
+      the anadama_workflows module
     
     """
 
@@ -116,7 +119,8 @@ def sequence_convert(files_list, output_file=None, reverse_complement=False,
 
     cmd = ("sequence_convert"
            + " --format="+from_format
-           + " --to="+format_to )
+           + " --to="+format_to
+           + " ".join([" -n '%s'"%(s) for s in lenfilters_list]) )
 
     if reverse_complement:
         cmd += " --reverse_complement"

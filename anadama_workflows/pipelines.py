@@ -203,6 +203,7 @@ class WGSPipeline(Pipeline):
       * For each sequence set:
 
         - Convert the sequences and concatenate into a single fastq file
+        - Filter sequences for length > 60 bases
         - Perform taxonomic profiling with metaphlan2
         - Align the fastq file agains the KEGG proks reduced dataset with bowtie2
         - Infer pathway, gene lists with HUMAnN
@@ -248,7 +249,9 @@ class WGSPipeline(Pipeline):
         self.products_dir = os.path.realpath(products_dir)
 
         self.options = {
-            'sequence_convert': { }, # no defaults for sequence_convert
+            'sequence_convert': {
+                'lenfilters_list': [ '>=60' ]
+            }, 
             'metaphlan2':       { },
             'bowtie2_align':    { },
             'humann':           { }
