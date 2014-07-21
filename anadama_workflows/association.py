@@ -51,7 +51,7 @@ def maaslin(otu_table, metadata_file):
 		final_targets[0] + " " + initial_targets[1]
 				
 	return {
-		"name": "maaslin: " + targets[0],
+		"name": "maaslin: " + final_targets[0],
 		"actions": [merge_otu_and_metadata, create_default_read_config, 
 			modify_read_config_for_project, transpose, run_maaslin],
 		"file_dep": [otu_table, metadata_file],
