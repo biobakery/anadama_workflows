@@ -153,12 +153,14 @@ def main():
     if not input_files:
         input_files = ['-']
 
+    lenfilters = opts.lenfilters if opts.lenfilters else []
+
     try:
         convert(*input_files, 
                 format=opts.from_format, 
                 to=opts.to_format,
                 revcomp=opts.revcomp,
-                filter_=generate_filter(opts.lenfilters))
+                filter_=generate_filter(lenfilters))
     except IOError as e:
         if e.errno == 32:
             # That's the error for a broken pipe this usually happens
