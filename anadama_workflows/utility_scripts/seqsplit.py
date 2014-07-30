@@ -42,15 +42,6 @@ opts_list = [
                          " the sequence. Default 4")
 ]
 
-def fa(record):
-    return ">%s\n" %(record.id), "%s\n" %(str(record.seq))
-        
-
-def ql(record):
-    return ">%s\n" %(record.id), "%s\n" %(
-        ' '.join([ str(x) for x in record.letter_annotations['phred_quality'] ])
-    )
-
 def main():
     parser = optparse.OptionParser(option_list=opts_list, 
                                    usage=HELP)
