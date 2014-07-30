@@ -80,7 +80,7 @@ def fastq_split(files_list, fasta_fname, qual_fname,
     cmd += " "+" ".join(files_list)
 
     return {
-        "name": "fastq_split:"+files_list[0],
+        "name": "fastq_split:"+fasta_fname,
         "actions": [cmd],
         "file_dep": files_list,
         "targets": [fasta_fname, qual_fname]
