@@ -1,5 +1,6 @@
 import os.path
 
+from anadama.decorators import requires
 from anadama.util import addtag, addext, guess_seq_filetype
 from anadama.util import biopython_to_metaphlan, dict_to_cmd_opts, new_file
 
@@ -8,7 +9,7 @@ from . import (
     settings
 )
 
-
+@requires(binaries=['humann_init.py'])
 def humann(infiles_list, workdir):
     """Workflow to find pathway and gene lists from homology search and/or
     genome mapping results with HUMAnN.
@@ -51,7 +52,7 @@ def humann(infiles_list, workdir):
         ]
     }
         
-
+@requires(binaries=['metaphlan2.py'])
 def metaphlan2(files_list, **opts):
     """Workflow to perform taxonomic profiling from whole metagenome
     shotgun sequences. Additional keyword options are used directly as

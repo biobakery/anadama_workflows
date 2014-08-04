@@ -4,11 +4,13 @@ import os
 import mimetypes
 
 from anadama.util import addext, guess_seq_filetype, new_file
+from anadama.decorators import requires
 
 from . import ( 
     starters
 )
 
+@requires(binaries=['gzip', 'bzip2', 'gunzip', 'bunzip2'])
 def extract(files_list):
     """Workflow for converting a list of input files from their zipped to
     their unzipped equivalent.
@@ -41,6 +43,7 @@ def extract(files_list):
     }
 
 
+@requires(binaries=['fastq_split'])
 def fastq_split(files_list, fasta_fname, qual_fname,
                 reverse_complement=False, trim=4, from_format=None):
     """ Workflow for concatenating and converting a list of sequence files
@@ -86,7 +89,7 @@ def fastq_split(files_list, fasta_fname, qual_fname,
         "targets": [fasta_fname, qual_fname]
     }
 
-
+@requires(binaries=['sequence_convert'])
 def sequence_convert(files_list, output_file=None, reverse_complement=False,
                      from_format=None, format_to="fastq", lenfilters_list=list()):
     """ Workflow for converting between sequence file formats.

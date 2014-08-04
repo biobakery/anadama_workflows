@@ -5,8 +5,9 @@ import operator
 import itertools
 from os.path import join
 
-# should probably import from anadama directly?
+
 from anadama.action import CmdAction
+from anadama.decorators import requires
 from doit.exceptions import TaskError, TaskFailed
 
 from anadama.util import (
@@ -60,6 +61,7 @@ def write_map(sample_group, sample_dir):
     }
 
 
+@requires(binaries=['qiime_cmd'])
 def demultiplex(map_fname, fasta_fname, qual_fname, output_fname,
                 qiime_opts={}):
     """Workflow to demultiplex a barcoded set of 16S sequences from a
@@ -106,7 +108,8 @@ def demultiplex(map_fname, fasta_fname, qual_fname, output_fname,
     }
 
 
-def pick_otus_closed_ref(input_fname, output_dir, verbose=False, qiime_opts={}):
+@requires(binaries=['qiime_cmd', 'sequence_convert'])
+def pick_otus_closed_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
     """Workflow to perform OTU picking, generates a biom-formatted OTU
     table from demultiplexed 16S reads. This workflow (in general
     terms) wraps qiime's pick_closed_reference_otus.py, which itself
@@ -139,6 +142,8 @@ def pick_otus_closed_ref(input_fname, output_dir, verbose=False, qiime_opts={}):
     output_fname = new_file("otu_table.biom", basedir=output_dir)
     revcomp_fname = new_file(
         "revcomp.fna", basedir=os.path.dirname(input_fname))
+
+    verbose = settings.workflows.verbose if verbose is None else verbose
 
     default_opts = {
         "taxonomy_fp": settings.workflows.sixteen.otu_taxonomy,
@@ -179,6 +184,7 @@ def pick_otus_closed_ref(input_fname, output_dir, verbose=False, qiime_opts={}):
     }
 
 
+@requires(binaries=['qiime_cmd'])
 def merge_otu_tables(files_list, name, output_dir):
     """Workflow to merge OTU tables into a single OTU table. Also accepts
     biom-formatted OTU tables.
@@ -204,6 +210,7 @@ def merge_otu_tables(files_list, name, output_dir):
     }
 
 
+@requires(binaries=['picrust_cmd'])
 def picrust(file, **opts):
     """Workflow to predict metagenome functional content from 16S OTU tables.
 
