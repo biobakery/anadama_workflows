@@ -168,7 +168,9 @@ def pick_otus_closed_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
     def run(targets):
         ret = CmdAction(cmd.format(input_fname), 
                         verbose=verbose).execute()
-        if type(ret) in (TaskError, TaskFailed):
+        conditions = ( type(ret) in (TaskError, TaskFailed),
+                       os.stat(output_fname).st_size == 0 )
+        if any(conditions):
             CmdAction(revcomp_cmd).execute()
             return CmdAction(cmd.format(revcomp_fname), 
                              verbose=verbose).execute()
@@ -244,7 +246,9 @@ def pick_otus_open_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
     def run(targets):
         ret = CmdAction(cmd.format(input_fname), 
                         verbose=verbose).execute()
-        if type(ret) in (TaskError, TaskFailed):
+        conditions = ( type(ret) in (TaskError, TaskFailed),
+                       os.stat(output_fname).st_size == 0 )
+        if any(conditions):
             CmdAction(revcomp_cmd).execute()
             return CmdAction(cmd.format(revcomp_fname), 
                              verbose=verbose).execute()
