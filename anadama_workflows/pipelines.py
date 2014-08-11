@@ -37,6 +37,8 @@ class SixteenSPipeline(Pipeline):
       * anadama_workflows.sixteen.merge_otu_tables
     """
 
+    name = "16S"
+
     def __init__(self,
                  sample_metadata,
                  raw_seq_files=list(),
@@ -51,7 +53,7 @@ class SixteenSPipeline(Pipeline):
         :param sample_metadata: String or list of namedtuples; sample metadata 
                                 as deserialized by 
                                 ``anadama.util.deserialize_map_file``. If a 
-                                string is given, the string is treated as a path 
+                                string is given, the string is treated as a path
                                 to the qiime-formatted map.txt for all samples. 
                                 For more information about sample-level 
                                 metadata, refer to the qiime documentation: 
@@ -216,6 +218,8 @@ class WGSPipeline(Pipeline):
       * anadama_workflows.wgs.humann
 
     """
+
+    name = "WGS"
 
     def __init__(self, raw_seq_files=list(), 
                  intermediate_fastq_files=list(),
