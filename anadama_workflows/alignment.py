@@ -1,9 +1,11 @@
 from anadama.util import dict_to_cmd_opts, addext, new_file
+from anadama.decorators import requires
 
 from . import (
     settings
 )
 
+@requires(binaries=["bowtie2"])
 def bowtie2_align(infiles_list, output_file, **opts):
     """Workflow to use bowtie2 to map a list of input sequence files
     against a bowtie2 database. Additional keyword options are used

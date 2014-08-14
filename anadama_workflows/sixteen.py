@@ -5,8 +5,9 @@ import operator
 import itertools
 from os.path import join
 
-# should probably import from anadama directly?
+
 from anadama.action import CmdAction
+from anadama.decorators import requires
 from doit.exceptions import TaskError, TaskFailed
 
 from anadama.util import (
@@ -60,6 +61,7 @@ def write_map(sample_group, sample_dir):
     }
 
 
+@requires(binaries=['qiime_cmd'])
 def demultiplex(map_fname, fasta_fname, qual_fname, output_fname,
                 qiime_opts={}):
     """Workflow to demultiplex a barcoded set of 16S sequences from a
@@ -106,7 +108,8 @@ def demultiplex(map_fname, fasta_fname, qual_fname, output_fname,
     }
 
 
-def pick_otus_closed_ref(input_fname, output_dir, verbose=False, qiime_opts={}):
+@requires(binaries=['qiime_cmd', 'sequence_convert'])
+def pick_otus_closed_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
     """Workflow to perform OTU picking, generates a biom-formatted OTU
     table from demultiplexed 16S reads. This workflow (in general
     terms) wraps qiime's pick_closed_reference_otus.py, which itself
@@ -140,6 +143,8 @@ def pick_otus_closed_ref(input_fname, output_dir, verbose=False, qiime_opts={}):
     revcomp_fname = new_file(
         "revcomp.fna", basedir=os.path.dirname(input_fname))
 
+    verbose = settings.workflows.verbose if verbose is None else verbose
+
     default_opts = {
         "taxonomy_fp": settings.workflows.sixteen.otu_taxonomy,
         "reference_fp": settings.workflows.sixteen.otu_refseq
@@ -163,7 +168,9 @@ def pick_otus_closed_ref(input_fname, output_dir, verbose=False, qiime_opts={}):
     def run(targets):
         ret = CmdAction(cmd.format(input_fname), 
                         verbose=verbose).execute()
-        if type(ret) in (TaskError, TaskFailed):
+        conditions = ( type(ret) in (TaskError, TaskFailed),
+                       os.stat(output_fname).st_size == 0 )
+        if any(conditions):
             CmdAction(revcomp_cmd).execute()
             return CmdAction(cmd.format(revcomp_fname), 
                              verbose=verbose).execute()
@@ -178,7 +185,86 @@ def pick_otus_closed_ref(input_fname, output_dir, verbose=False, qiime_opts={}):
         "file_dep": [input_fname]
     }
 
+@requires(binaries=['qiime_cmd', 'sequence_convert'])
+def pick_otus_open_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
+    """Workflow to perform open-reference OTU picking. Similar to
+    closed-reference OTU picking, this workflow generates a
+    biom-formatted OTU table from demultiplexed 16S reads. This
+    workflow (in general terms) wraps qiime's
+    pick_open_reference_otus.py, which itself wraps either uclust or
+    usearch. Note that uclust and usearch require a fairly large
+    memory footprint (1.5-2.0G in some cases).
 
+    :param input_fname: String; File path to the input,
+                        fasta-formatted 16S sequences
+    :param output_dir: String; Path to the directory where the output OTU 
+                       table will be saved as 'otu_table.biom'. Other 
+                       qiime-specific logs will go there, too.
+    :keyword verbose: Boolean: set to true to print the commands that are 
+                      run as they are run
+    :keyword qiime_opts: Dictionary; A dictionary of command line options to
+                         be passed to the wrapped split_libraries.py script. 
+                         No - or -- flags are necessary; the correct - or --t
+                         flags are inferred based on the length of the option. 
+                         For boolean options, use the key/value pattern 
+                         of { "my-option": "" }.
+
+    External dependencies:
+      - Qiime 1.8.0: https://github.com/qiime/qiime-deploy
+      - USEARCH: (only if using the usearch option) http://www.drive5.com/usearch/
+
+    Resource utilization:
+      - RAM: >1.5 G
+
+    """
+
+    output_fname = new_file("otu_table.biom", basedir=output_dir)
+    revcomp_fname = new_file(
+        "revcomp.fna", basedir=os.path.dirname(input_fname))
+
+    verbose = settings.workflows.verbose if verbose is None else verbose
+
+    default_opts = {
+        "reference_fp": settings.workflows.sixteen.otu_refseq
+    }
+    default_opts.update(qiime_opts)
+    opts = dict_to_cmd_opts(default_opts)
+
+    cmd = ("qiime_cmd pick_open_reference_otus.py"+
+           " --input_fp={}"+
+           " --output_dir="+output_dir+
+           " -f"+
+           " "+opts)
+
+    revcomp_cmd = ("sequence_convert"+
+                   " --format=fasta"+
+                   " --to=fasta "+
+                   " -r"+
+                   " "+input_fname+
+                   " > "+revcomp_fname)
+
+    def run(targets):
+        ret = CmdAction(cmd.format(input_fname), 
+                        verbose=verbose).execute()
+        conditions = ( type(ret) in (TaskError, TaskFailed),
+                       os.stat(output_fname).st_size == 0 )
+        if any(conditions):
+            CmdAction(revcomp_cmd).execute()
+            return CmdAction(cmd.format(revcomp_fname), 
+                             verbose=verbose).execute()
+        else:
+            return ret
+        
+
+    return {
+        "name": "pick_otus_open_ref:"+input_fname,
+        "actions": [run],
+        "targets": [output_fname],
+        "file_dep": [input_fname]
+    }
+
+
+@requires(binaries=['qiime_cmd'])
 def merge_otu_tables(files_list, name, output_dir):
     """Workflow to merge OTU tables into a single OTU table. Also accepts
     biom-formatted OTU tables.
@@ -204,6 +290,7 @@ def merge_otu_tables(files_list, name, output_dir):
     }
 
 
+@requires(binaries=['picrust_cmd'])
 def picrust(file, **opts):
     """Workflow to predict metagenome functional content from 16S OTU tables.
 

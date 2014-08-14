@@ -1,5 +1,8 @@
 import os, re
 
+from anadama.decorators import requires
+
+@requires(binaries=['merge_metadata.py', 'transpose.py', 'Maaslin.R'])
 def maaslin(otu_table, metadata_file):
     ''' Workflow to compute the significance of association in microbial community
         using a transform abundance or relative function
