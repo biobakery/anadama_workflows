@@ -67,10 +67,8 @@ def fastq_split(files_list, fasta_fname, qual_fname,
 
     """
 
-    if not from_format:
-        seqtype = guess_seq_filetype(files_list[0])
-    else:
-        seqype = from_format
+    seqtype = from_format if from_format else guess_seq_filetype(files_list[0])
+
     cmd = ("fastq_split"+
            " --fasta_out="+fasta_fname+
            " --qual_out="+qual_fname+
