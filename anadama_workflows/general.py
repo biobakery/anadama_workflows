@@ -36,10 +36,10 @@ def extract(files_list):
             pass
 
     return {
-        "name": "decompress:"+infiles_list[0],
+        "name": "decompress:"+files_list[0],
         "targets": targets,
         "actions": actions,
-        "file_dep": infiles_list
+        "file_dep": files_list
     }
 
 
