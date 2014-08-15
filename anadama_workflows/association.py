@@ -24,7 +24,7 @@ def maaslin(otu_table, metadata_file):
     read_config_file = outdir + "/" + project_name + "_maaslin.read.config"
     
     # the directory of the final_targets[0] is where the output will be written    
-    final_targets = [outdir + "/" + "demo.txt", 
+    final_targets = [outdir + "/" + project_name + "demo.txt", 
         outdir + "/" + project_name + ".txt",  
         outdir + "/" + project_name + "_log.txt"]
     
