@@ -95,6 +95,8 @@ def main():
                     tmp = record.letter_annotations.pop('phred_quality')
                     record.seq = record.seq[opts.trim:]
                     record.letter_annotations['phred_quality'] = tmp[opts.trim:]
+                if len(record.seq) <= 0:
+                    continue
                 try:
                     output(record)
                 except BiopythonParserWarning as e:
