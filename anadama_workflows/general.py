@@ -28,10 +28,10 @@ def extract(files_list):
         _, min_file_type = mimetypes.guess_type(fname)
         if min_file_type == 'gzip':
             actions.append( "gunzip "+fname )
-            targets.append( os.path.splittext(fname)[0] )
+            targets.append( os.path.splitext(fname)[0] )
         if min_file_type == 'bzip2':
             actions.append( "bunzip2 "+fname )
-            targets.append( os.path.splittext(fname)[0] )
+            targets.append( os.path.splitext(fname)[0] )
         else:
             pass
 
