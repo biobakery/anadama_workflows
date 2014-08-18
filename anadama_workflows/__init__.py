@@ -14,7 +14,9 @@ from .sixteen import (
 from .association import (
     maaslin,
     biom_to_tsv,
-    qiime_to_maaslin
+    qiime_to_maaslin,
+    merge_otu_metadata,
+    transpose
 )
 
 all = (
@@ -22,7 +24,8 @@ all = (
     bowtie2_align, 
     extract, fastq_split, sequence_convert,
     write_map, demultiplex, pick_otus_closed_ref, merge_otu_tables,
-    maaslin, biom_to_tsv, qiime_to_maaslin
+    maaslin, biom_to_tsv, qiime_to_maaslin, merge_otu_metadata,
+    transpose
 )
 
 
