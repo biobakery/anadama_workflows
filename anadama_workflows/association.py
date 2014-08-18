@@ -3,7 +3,7 @@ import os, re
 from anadama.decorators import requires
 
 @requires(binaries=['biom'])
-def biom2tsv(infile, outfile):
+def biom_to_tsv(infile, outfile):
     """ Convert a biom file to a tsv using the biom package 
 
     param: infile: file of the biom format
@@ -19,12 +19,37 @@ def biom2tsv(infile, outfile):
         "--output-metadata-id \"Consensus Lineage\""
 
     return {
-        "name": "biom2tsv: " + infile,
+        "name": "biom_to_tsv: " + infile,
         "actions": [cmd],
         "file_dep": [infile],
         "targets": [outfile]
     }
  
+@requires(binaries=['qiimeToMaaslin.py'])
+def qiime_to_maaslin(in_datafile, in_metadatafile, outfile):
+    """ Converts a tsv file from qiime to a maaslin format
+
+    param: in_datafile: file of the qiime tsv format (from biom_to_tsv)
+
+    param: in_metadatafile: file of metadata for input to maaslin
+
+    param: outfile: file of the tsv format for input to maaslin
+
+    External dependencies
+    - QiimeToMaaslin: https://bitbucket.org/biobakery/qiimetomaaslin
+
+    """
+
+    cmd="qiimeToMaaslin.py " + in_metadatafile + " < " + in_datafile + \
+        " > " + outfile
+
+    return {
+        "name": "qiime_to_maaslin: " + in_datafile,
+        "actions": [cmd],
+        "file_dep": [in_datafile, in_metadatafile],
+        "targets": [outfile]
+    }
+
 
 @requires(binaries=['merge_metadata.py', 'transpose.py', 'Maaslin.R'])
 def maaslin(otu_table, metadata_file):
@@ -56,7 +81,7 @@ def maaslin(otu_table, metadata_file):
     read_config_file = outdir + "/" + project_name + "_maaslin.read.config"
     
     # the directory of the final_targets[0] is where the output will be written    
-    final_targets = [outdir + "/" + project_name + "demo.txt", 
+    final_targets = [outdir + "/" + project_name + "_maaslin.txt", 
         outdir + "/" + project_name + ".txt",  
         outdir + "/" + project_name + "_log.txt"]
     
