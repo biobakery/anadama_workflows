@@ -2,12 +2,44 @@ import os, re
 
 from anadama.decorators import requires
 
+@requires(binaries=['biom'])
+def biom2tsv(infile, outfile):
+    """ Convert a biom file to a tsv using the biom package 
+
+    param: infile: file of the biom format
+
+    param: outfile: file of the tsv format
+
+    External dependencies
+    - biom-format: http://biom-format.org/
+    """
+
+    cmd="biom convert -i " + infile + " -o " + \
+        outfile + " --to-tsv --header-key taxonomy " + \
+        "--output-metadata-id \"Consensus Lineage\""
+
+    return {
+        "name": "biom2tsv: " + infile,
+        "actions": [cmd],
+        "file_dep": [infile],
+        "targets": [outfile]
+    }
+ 
+
 @requires(binaries=['merge_metadata.py', 'transpose.py', 'Maaslin.R'])
 def maaslin(otu_table, metadata_file):
-    ''' Workflow to compute the significance of association in microbial community
+    """ Workflow to compute the significance of association in microbial community
         using a transform abundance or relative function
         table obtained from Qiime, HUMAnN or MetaPhlAn plus study metadata
-    '''
+
+    param: otu_table: file of the biom or tsv format
+
+    param: metadata_file: file of metadata in tsv format
+
+    External dependencies
+    - Maaslin: https://bitbucket.org/biobakery/maaslin
+        
+    """
     
     # place the output in the same location as the input
     outdir = os.path.dirname(otu_table)

@@ -12,7 +12,8 @@ from .sixteen import (
     merge_otu_tables
 )
 from .association import (
-    maaslin
+    maaslin,
+    biom2tsv
 )
 
 all = (
@@ -20,7 +21,7 @@ all = (
     bowtie2_align, 
     extract, fastq_split, sequence_convert,
     write_map, demultiplex, pick_otus_closed_ref, merge_otu_tables,
-    maaslin
+    maaslin, biom2tsv
 )
 
 
