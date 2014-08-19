@@ -26,12 +26,10 @@ def biom_to_tsv(infile, outfile):
     }
 
 @requires(binaries=['qiimeToMaaslin.py'])
-def qiime_to_maaslin(in_datafile, in_metadatafile, outfile):
+def qiime_to_maaslin(in_datafile, outfile):
     """ Converts a tsv file from qiime to a maaslin format
 
     param: in_datafile: file of the qiime tsv format (from biom_to_tsv)
-
-    param: in_metadatafile: file of metadata for input to maaslin
 
     param: outfile: file of the tsv format for input to maaslin
 
@@ -40,13 +38,13 @@ def qiime_to_maaslin(in_datafile, in_metadatafile, outfile):
 
     """
 
-    cmd="qiimeToMaaslin.py " + in_metadatafile + " < " + in_datafile + \
+    cmd="qiimeToMaaslin.py < " + in_datafile + \
         " > " + outfile
 
     return {
         "name": "qiime_to_maaslin: " + in_datafile,
         "actions": [cmd],
-        "file_dep": [in_datafile, in_metadatafile],
+        "file_dep": [in_datafile],
         "targets": [outfile]
     }
 
@@ -146,6 +144,32 @@ def transpose(pcl_file, outfile):
         "targets": [outfile]
     }
 
+@requires(binaries=['Maaslin.R'])
+def run_maaslin(read_config_file, maaslin_outfile, pcl_file):
+    """ Run the maaslin software
+
+    param: read_config_file: file generated based on pcl and metadata
+
+    param: maaslin_outfile: one of the output files written by maaslin
+    
+    param: pcl_file: file generated to meet maaslin format requirements
+
+    External dependencies
+    - Maaslin: https://bitbucket.org/biobakery/maaslin
+        
+    """
+
+    cmd = "Maaslin.R -i " + read_config_file + " " + \
+        maaslin_outfile + " " + pcl_file
+                
+    return {
+        "name": "run_maaslin: " + pcl_file,
+        "actions": [cmd],
+        "file_dep": [read_config_file, pcl_file],
+        "targets": [maaslin_outfile]
+    }
+
+
 def maaslin(otu_table, metadata_file):
     """ Workflow to compute the significance of association in microbial community
         using a transform abundance or relative function
@@ -183,9 +207,11 @@ def maaslin(otu_table, metadata_file):
     
     # need to merge otu table and metadata
     if otu_table.endswith(".biom"):
-        otu_table_to_tsv=new_file_basename + "_format.tsv"
-        yield biom_to_tsv(otu_table,otu_table_to_tsv)
-        yield qiime_to_maaslin(otu_table_to_tsv, metadata_file, initial_targets[0])
+        otu_table_tsv_format=new_file_basename + "_format.tsv"
+        yield biom_to_tsv(otu_table,otu_table_tsv_format)
+        otu_table_maaslin_format=new_file_basename + "_format_maaslin.tsv"
+        yield qiime_to_maaslin(otu_table_tsv_format, otu_table_maaslin_format)
+        yield merge_otu_metadata(otu_table_maaslin_format, metadata_file, initial_targets[0])
     else:
         yield merge_otu_metadata(otu_table, metadata_file,initial_targets[0])
     
@@ -194,14 +220,6 @@ def maaslin(otu_table, metadata_file):
 
     # for command line need to transpose first
     yield transpose(initial_targets[0],initial_targets[1])
-            
-    cmd = "Maaslin.R -i " + read_config_file + " " + \
-        final_targets[0] + " " + initial_targets[1]
-                
-    yield {
-        "name": "maaslin: " + initial_targets[1],
-        "actions": [cmd],
-        "file_dep": [read_config_file, initial_targets[1]],
-        "targets": final_targets
-    }
+          
+    yield run_maaslin(read_config_file, final_targets[0], initial_targets[1])  
 
