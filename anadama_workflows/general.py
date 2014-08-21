@@ -10,9 +10,9 @@ from . import (
     starters
 )
 
-@requires(binaries=['gzip', 'bzip2', 'gunzip', 'bunzip2'])
-def extract(files_list):
-    """Workflow for converting a list of input files from their zipped to
+@requires(binaries=['gzip', 'bzip2'])
+def extract(fname_from, fname_to=None):
+    """Workflow for converting an input file from their zipped to
     their unzipped equivalent.
 
     :param files_list: List; The input files to decompress
@@ -22,25 +22,24 @@ def extract(files_list):
       - bunzip2: Should come with the bzip2 package
 
     """
-    actions = list()
-    targets = list()
-    for fname in files_list:
-        _, min_file_type = mimetypes.guess_type(fname)
-        if min_file_type == 'gzip':
-            actions.append( "gunzip "+fname )
-            targets.append( os.path.splitext(fname)[0] )
-        if min_file_type == 'bzip2':
-            actions.append( "bunzip2 "+fname )
-            targets.append( os.path.splitext(fname)[0] )
-        else:
-            pass
 
-    return {
-        "name": "decompress:"+files_list[0],
-        "targets": targets,
-        "actions": actions,
-        "file_dep": files_list
+    target = fname_to if fname_to else os.path.splitext(fname_from)[0]
+    task = {
+        "name": "decompress:"+fname_from,
+        "targets": [target],
+        "file_dep": [fname_from]
     }
+
+    _, min_file_type = mimetypes.guess_type(fname_from)
+    if min_file_type == 'gzip':
+        task['actions'] = [ "gzip -d <"+fname_from+" > "+target ]
+        return task
+    elif min_file_type == 'bzip2':
+        task['actions'] = [ "gzip -d <"+fname_from+" > "+target ]
+        return task
+    else:
+        return None
+
 
 
 @requires(binaries=['fastq_split'])
