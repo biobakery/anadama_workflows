@@ -22,6 +22,8 @@ setup(
         'console_scripts': [
             'sequence_convert = anadama_workflows.utility_scripts.convert:main',
             'fastq_split      = anadama_workflows.utility_scripts.seqsplit:main',
+            'sequence_sort    = anadama_workflows.utility_scripts.sort:main',
+            'sequence_pair    = anadama_workflows.utility_scripts.pair:main'
         ],
     }
 )

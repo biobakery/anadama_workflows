@@ -36,13 +36,15 @@ opts_list = [
                          help="Write the reverse complement sequence"),
     optparse.make_option('-l', '--logging', action="store", type="string",
                          dest="logging", default="INFO",
-                         help="Logging verbosity, options are debug, info, "+
-                         "warning, and critical"),
-    optparse.make_option('-n', '--filter_by_len', action='append', type="string",
-                         dest='lenfilters', help="Filter sequences by length. If"
-                         " a sequence has a length that matches this condition,"
-                         " then it's kept. Otherwise, the sequence is discarded."
-                         " recognized conditions are {}".format(comparators.keys()))
+                         help="Logging verbosity, options are debug, info,"
+                         " warning, and critical"),
+    optparse.make_option('-n', '--filter_by_len', action='append', 
+                         type="string", dest='lenfilters', 
+                         help="Filter sequences by length. If a sequence has a"
+                         " length that matches this condition, then it's kept."
+                         " Otherwise, the sequence is discarded. recognized"
+                         " conditions are {}".format(
+                             comparators.keys()))
 ]
 
 
