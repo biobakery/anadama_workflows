@@ -49,6 +49,9 @@ def usearch_stitch(input_fastq_pair, output_fastq, verbose=True,
             if remove_tempfiles:
                 os.remove(paired(r1))
                 os.remove(paired(r2))
+        if type(ret) in (TaskError, TaskFailed):
+            ret = CmdAction('cp {r1} {out}'.format(r1=r1, out=output_fastq),
+                            verbose=verbose).execute()
         else:
             return ret
 
