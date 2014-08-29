@@ -166,18 +166,17 @@ def pick_otus_closed_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
                    " > "+revcomp_fname)
 
     def run(targets):
-        ret = CmdAction(cmd.format(input_fname), 
-                        verbose=verbose).execute()
-        conditions = ( type(ret) in (TaskError, TaskFailed),
-                       os.stat(output_fname).st_size == 0 )
-        if any(conditions):
-            CmdAction(revcomp_cmd).execute()
-            return CmdAction(cmd.format(revcomp_fname), 
-                             verbose=verbose).execute()
-        else:
-            return ret
-        
-
+        strategies.backup(
+            (CmdAction(cmd.format(input_fname),verbose=verbose),
+             strategies.Group(
+                 CmdAction(revcomp_cmd),
+                 CmdAction(cmd.format(revcomp_fname),verbose=verbose))),
+            extra_conditions = [ 
+                lambda ret, output_fname: os.stat(output_fname).st_size == 0
+            ],
+            output_fname=output_fname,
+        )
+             
     return {
         "name": "pick_otus_closed_ref:"+input_fname,
         "actions": [run],
@@ -244,17 +243,16 @@ def pick_otus_open_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
                    " > "+revcomp_fname)
 
     def run(targets):
-        ret = CmdAction(cmd.format(input_fname), 
-                        verbose=verbose).execute()
-        conditions = ( type(ret) in (TaskError, TaskFailed),
-                       os.stat(output_fname).st_size == 0 )
-        if any(conditions):
-            CmdAction(revcomp_cmd).execute()
-            return CmdAction(cmd.format(revcomp_fname), 
-                             verbose=verbose).execute()
-        else:
-            return ret
-        
+        strategies.backup(
+            (CmdAction(cmd.format(input_fname),verbose=verbose),
+             strategies.Group(
+                 CmdAction(revcomp_cmd),
+                 CmdAction(cmd.format(revcomp_fname),verbose=verbose))),
+            extra_conditions = [ 
+                lambda ret, output_fname: os.stat(output_fname).st_size == 0
+            ],
+            output_fname=output_fname
+        )
 
     return {
         "name": "pick_otus_open_ref:"+input_fname,
