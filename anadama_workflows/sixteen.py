@@ -8,7 +8,7 @@ from os.path import join
 
 from anadama.action import CmdAction
 from anadama.decorators import requires
-from doit.exceptions import TaskError, TaskFailed
+from anadama import strategies
 
 from anadama.util import (
     addext, 
@@ -290,8 +290,8 @@ def merge_otu_tables(files_list, name, output_dir):
     }
 
 
-@requires(binaries=['picrust_cmd'])
-def picrust(file, **opts):
+@requires(binaries=['picrust_cmd', 'biom'])
+def picrust(file, verbose=True, **opts):
     """Workflow to predict metagenome functional content from 16S OTU tables.
 
     :param file: String; input OTU table.
@@ -315,17 +315,13 @@ def picrust(file, **opts):
     norm_out = new_file(addtag(file, "normalized_otus"))
     predict_out = new_file(addtag(file, "picrust"))
 
-    all_opts = { 'tab_in' : 0,#flag if input is a tabulated file
-                 'tab_out' : 0, #flag if output file is to be tabulated
-                 'gg_version' : '', #greengenes version
-                 't' : '', #empty for KO, else can be COG or RFAM
-                 'with_confidence' : 0, #flag if want to output confidence intervals
-                 'custom' : '', #if not empty, use a custom trait to predict metagenomes, specified by a file
-    }
+    all_opts = { 'tab_in'          : 0,  'tab_out' : 0,
+                 'gg_version'      : '', 't'       : '', 
+                 'with_confidence' : 0,  'custom'  : '' }
     all_opts.update(opts)
 
     cmd1 = ("picrust_cmd normalize_by_copy_number.py "
-            + "-i " + file
+            + "-i %s"
             + " -o " + norm_out)
     if all_opts['gg_version']:
         cmd1 += " -g " + all_opts['gg_version']
@@ -333,7 +329,7 @@ def picrust(file, **opts):
         cmd1 += " -f"
 
     cmd2 = ("picrust_cmd predict_metagenomes.py "
-            + "-i " + norm_out
+            + "-i %s"
             + " -o " + predict_out)
     if all_opts['gg_version']:
         cmd2 += " -g " + all_opts['gg_version']
@@ -346,8 +342,26 @@ def picrust(file, **opts):
     if all_opts['custom']:
         cmd2 += " -c " + all_opts['custom']
 
+
+    converted = addtag(file, "json")
+    format_cmd = CmdAction('biom convert --table-type="OTU table"'
+                           ' --header-key taxonomy --to-json'
+                           ' -i {} -o {} '.format(file, converted),
+                           verbose=verbose)
+    def run():
+        # try to run without converting to json, if that fails,
+        # convert first, then run on the json-converted biom file
+        return strategies.backup(
+            (strategies.Group(CmdAction(cmd1%(file), verbose=verbose),
+                              CmdAction(cmd2%(file), verbose=verbose)),
+             strategies.Group(format_cmd,
+                              CmdAction(cmd1%(converted), verbose=verbose),
+                              CmdAction(cmd2%(converted), verbose=verbose)))
+        )
+             
+
     return dict(name = "picrust:"+predict_out,
-                actions = [cmd1, cmd2],
+                actions = [run],
                 file_dep = [file],
                 targets = [predict_out, norm_out])
 
