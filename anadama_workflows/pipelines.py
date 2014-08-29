@@ -305,9 +305,9 @@ class WGSPipeline(Pipeline):
             # create a directory for the humann environment
             # util.new_file does that for us
             new_basedir = alignment_file+"_humann"
-            sample_dir = util.new_file('SConstruct', basedir=new_basedir)
+            scons_fname = util.new_file('SConstruct', basedir=new_basedir)
             yield wgs.humann(
-                [alignment_file], workdir=sample_dir,
+                [alignment_file], workdir=new_basedir,
                 **self.options.get('humann', dict())
             )
 
