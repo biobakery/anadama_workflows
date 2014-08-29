@@ -1,7 +1,6 @@
 import os
 
-from doit.exceptions import TaskError, TaskFailed
-
+from anadama import strategies
 from anadama.action import CmdAction
 from anadama.decorators import requires
 
@@ -31,29 +30,30 @@ def usearch_stitch(input_fastq_pair, output_fastq, verbose=True,
 
     def run():
         r1, r2 = input_fastq_pair
-        ret = CmdAction(stitch_cmd.format(r1=r1, r2=r2,
-                                   opts_str=opts_str,
-                                   output_fastq=output_fastq),
-                        verbose=verbose).execute()
-        if type(ret) in (TaskError, TaskFailed):
-            paired = lambda s: s.replace('.fastq', '_paired.fastq')
-            CmdAction(pair_cmd.format(r1=r1, r2=r2,
-                                      r1out=paired(r1),
-                                      r2out=paired(r2)), 
-                      verbose=verbose).execute()
-            ret = CmdAction(stitch_cmd.format(r1=paired(r1),
-                                              r2=paired(r2),
-                                              opts_str=opts_str,
-                                              output_fastq=output_fastq),
-                            verbose=verbose).execute()
-            if remove_tempfiles:
-                os.remove(paired(r1))
-                os.remove(paired(r2))
-        if type(ret) in (TaskError, TaskFailed):
-            ret = CmdAction('cp {r1} {out}'.format(r1=r1, out=output_fastq),
-                            verbose=verbose).execute()
-        else:
-            return ret
+        paired = lambda s: s.replace('.fastq', '_paired.fastq')
+        ret = strategies.backup(
+            (CmdAction(stitch_cmd.format(r1=r1, r2=r2, opts_str=opts_str,
+                                         output_fastq=output_fastq),
+                       verbose=verbose),
+             strategies.Group(
+                 CmdAction(pair_cmd.format(r1=r1, r2=r2,
+                                           r1out=paired(r1),
+                                           r2out=paired(r2)), 
+                           verbose=verbose),
+                 CmdAction(stitch_cmd.format(r1=paired(r1),
+                                             r2=paired(r2),
+                                             opts_str=opts_str,
+                                             output_fastq=output_fastq),
+                           verbose=verbose)),
+             CmdAction('cp {r1} {out}'.format(r1=r1, out=output_fastq),
+                       verbose=verbose)),
+        )
+            
+        if remove_tempfiles:
+            for f in (paired(r1), paired(r2)):
+                if os.path.exists(f):
+                    os.remove(f)
+        return ret
 
 
     yield { "name"    : "usearch_stitch: "+output_fastq,

@@ -116,35 +116,41 @@ class SixteenSPipeline(Pipeline):
             yield general.extract(compressed_files)
 
         # split to fasta, qual, map.txt triplets and demultiplex
-        firstitem = itemgetter(0)
-        self.sample_metadata = sorted(self.sample_metadata, key=firstitem)
-        for sample_id, sample_group in groupby(self.sample_metadata, firstitem):
-            sample_dir = join(self.products_dir, sample_id)
-            sample_group = list(sample_group)
-            map_fname = util.new_file("map.txt", basedir=sample_dir)
-            yield sixteen.write_map(sample_group, sample_dir, 
-                                    **self.options.get('write_map', dict()))
+        if self.raw_seq_files:
+            firstitem = itemgetter(0)
+            self.sample_metadata = sorted(self.sample_metadata, key=firstitem)
+            for sample_id, sample_group in groupby(self.sample_metadata, 
+                                                   firstitem):
+                sample_dir = join(self.products_dir, sample_id)
+                sample_group = list(sample_group)
+                map_fname = util.new_file("map.txt", basedir=sample_dir)
+                yield sixteen.write_map(
+                    sample_group, sample_dir, 
+                    **self.options.get('write_map', dict())
+                )
 
-            files_list = self._filter_files_for_sample(
-                self.raw_seq_files, sample_group)
-            fasta_fname = util.new_file(sample_id+".fa", basedir=sample_dir)
-            qual_fname = util.new_file(sample_id+".qual", basedir=sample_dir)
-            yield general.fastq_split(
-                files_list, fasta_fname, qual_fname, 
-                **self.options.get('fastq_split', dict())
-            )
+                files_list = self._filter_files_for_sample(
+                    self.raw_seq_files, sample_group)
+                fasta_fname = util.new_file(sample_id+".fa", 
+                                            basedir=sample_dir)
+                qual_fname = util.new_file(sample_id+".qual", 
+                                           basedir=sample_dir)
+                yield general.fastq_split(
+                    files_list, fasta_fname, qual_fname, 
+                    **self.options.get('fastq_split', dict())
+                )
 
-            qiime_opts = self.options['demultiplex'].pop('qiime_opts', {})
-            if 'barcode-type' not in qiime_opts:
-                qiime_opts['barcode-type'] = self._determine_barcode_type(
-                    sample_group)
-            demuxed_fname = util.new_file("seqs.fna", basedir=sample_dir)
-            yield sixteen.demultiplex(
-                map_fname, fasta_fname, qual_fname, demuxed_fname,
-                qiime_opts=qiime_opts,
-                **self.options.get('demultiplex', dict())
-            )
-            self.demuxed_fasta_files.append(demuxed_fname)
+                qiime_opts = self.options['demultiplex'].pop('qiime_opts', {})
+                if 'barcode-type' not in qiime_opts:
+                    qiime_opts['barcode-type'] = self._determine_barcode_type(
+                        sample_group)
+                demuxed_fname = util.new_file("seqs.fna", basedir=sample_dir)
+                yield sixteen.demultiplex(
+                    map_fname, fasta_fname, qual_fname, demuxed_fname,
+                    qiime_opts=qiime_opts,
+                    **self.options.get('demultiplex', dict())
+                )
+                self.demuxed_fasta_files.append(demuxed_fname)
 
         # do closed reference otu picking
         for fasta_fname in self.demuxed_fasta_files:
