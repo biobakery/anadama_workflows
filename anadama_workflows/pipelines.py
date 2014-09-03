@@ -45,7 +45,7 @@ class SixteenSPipeline(Pipeline):
                  demuxed_fasta_files=list(), # assumed to be QC'd
                  otu_tables=list(),
                  products_dir=str(),
-                 pathway_options=dict(),
+                 workflow_options=dict(),
                  *args, **kwargs):
 
         """Initialize the pipeline.
@@ -70,7 +70,7 @@ class SixteenSPipeline(Pipeline):
                              inference.
         :keyword products_dir: String; Directory path for where outputs will 
                                be saved.
-        :keyword pathway_options: Dictionary; **opts to be fed into the 
+        :keyword workflow_options: Dictionary; **opts to be fed into the 
                                   respective workflow functions.
         """
 
@@ -100,7 +100,7 @@ class SixteenSPipeline(Pipeline):
                 'name': 'all_otu_tables_merged.biom'
             }
         }
-        self.options.update(pathway_options)
+        self.options.update(workflow_options)
         
         super(SixteenSPipeline, self).__init__(*args, **kwargs)
 
@@ -231,7 +231,7 @@ class WGSPipeline(Pipeline):
                  intermediate_fastq_files=list(),
                  alignment_result_files=list(),
                  products_dir=str(),
-                 pathway_options=dict(),
+                 workflow_options=dict(),
                  *args, **kwargs):
         """Initialize the pipeline.
         
@@ -247,7 +247,7 @@ class WGSPipeline(Pipeline):
                                          inference.
         :keyword products_dir: String; Directory path for where outputs will 
                                be saved.
-        :keyword pathway_options: Dictionary; **opts to be fed into the 
+        :keyword workflow_options: Dictionary; **opts to be fed into the 
                                   respective workflow functions.
 
         """
@@ -266,7 +266,7 @@ class WGSPipeline(Pipeline):
             'bowtie2_align':    { },
             'humann':           { }
         }
-        self.options.update(pathway_options)
+        self.options.update(workflow_options)
 
 
         super(WGSPipeline, self).__init__(*args, **kwargs)
