@@ -289,7 +289,7 @@ def merge_otu_tables(files_list, name, output_dir):
 
 
 @requires(binaries=['picrust_cmd', 'biom'])
-def picrust(file, verbose=True, **opts):
+def picrust(file, output_dir=None, verbose=True, **opts):
     """Workflow to predict metagenome functional content from 16S OTU tables.
 
     :param file: String; input OTU table.
@@ -310,8 +310,8 @@ def picrust(file, verbose=True, **opts):
       - PICRUSt: Version 1.0.0, http://picrust.github.io/picrust/install.html#install
 
     """
-    norm_out = new_file(addtag(file, "normalized_otus"))
-    predict_out = new_file(addtag(file, "picrust"))
+    norm_out = new_file(addtag(file, "normalized_otus"), basedir=output_dir)
+    predict_out = new_file(addtag(file, "picrust"), basedir=output_dir)
 
     all_opts = { 'tab_in'          : 0,  'tab_out' : 0,
                  'gg_version'      : '', 't'       : '', 

@@ -8,7 +8,7 @@ from anadama import util
 from anadama.pipelines import Pipeline
 
 from . import settings
-from . import general, sixteen, wgs, alignment
+from . import general, sixteen, wgs, alignment, visualization
 
 class SixteenSPipeline(Pipeline):
 
@@ -45,7 +45,7 @@ class SixteenSPipeline(Pipeline):
                  demuxed_fasta_files=list(), # assumed to be QC'd
                  otu_tables=list(),
                  products_dir=str(),
-                 pathway_options=dict(),
+                 workflow_options=dict(),
                  *args, **kwargs):
 
         """Initialize the pipeline.
@@ -70,7 +70,7 @@ class SixteenSPipeline(Pipeline):
                              inference.
         :keyword products_dir: String; Directory path for where outputs will 
                                be saved.
-        :keyword pathway_options: Dictionary; **opts to be fed into the 
+        :keyword workflow_options: Dictionary; **opts to be fed into the 
                                   respective workflow functions.
         """
 
@@ -100,7 +100,7 @@ class SixteenSPipeline(Pipeline):
                 'name': 'all_otu_tables_merged.biom'
             }
         }
-        self.options.update(pathway_options)
+        self.options.update(workflow_options)
         
         super(SixteenSPipeline, self).__init__(*args, **kwargs)
 
@@ -164,7 +164,7 @@ class SixteenSPipeline(Pipeline):
         # infer genes and pathways with picrust
         for otu_table in self.otu_tables:
             yield sixteen.picrust(
-                otu_table, 
+                otu_table, output_dir=self.products_dir,
                 **self.options.get('picrust', dict())
             )
 
@@ -231,7 +231,7 @@ class WGSPipeline(Pipeline):
                  intermediate_fastq_files=list(),
                  alignment_result_files=list(),
                  products_dir=str(),
-                 pathway_options=dict(),
+                 workflow_options=dict(),
                  *args, **kwargs):
         """Initialize the pipeline.
         
@@ -247,7 +247,7 @@ class WGSPipeline(Pipeline):
                                          inference.
         :keyword products_dir: String; Directory path for where outputs will 
                                be saved.
-        :keyword pathway_options: Dictionary; **opts to be fed into the 
+        :keyword workflow_options: Dictionary; **opts to be fed into the 
                                   respective workflow functions.
 
         """
@@ -266,7 +266,7 @@ class WGSPipeline(Pipeline):
             'bowtie2_align':    { },
             'humann':           { }
         }
-        self.options.update(pathway_options)
+        self.options.update(workflow_options)
 
 
         super(WGSPipeline, self).__init__(*args, **kwargs)
@@ -312,3 +312,48 @@ class WGSPipeline(Pipeline):
             )
 
 
+class VisualizationPipeline(Pipeline):
+    
+    name = "Visualization"
+
+    def __init__(self, otu_tables=list(), 
+                 workflow_options=dict(),
+                 products_dir=str(),
+                 *args, **kwargs):
+        self.options = {
+            'stacked_bar_chart': { }
+        }
+        self.options.update(workflow_options)
+        
+        self.otu_tables = otu_tables
+
+        if not products_dir:
+            products_dir = settings.workflows.product_directory
+        self.products_dir = os.path.realpath(products_dir)
+
+        super(VisualizationPipeline, self).__init__(*args, **kwargs)
+
+
+    @classmethod
+    def _chain(cls, other_pipeline, workflow_options=dict()):
+        try:
+            p = cls(otu_tables=other_pipeline.otu_tables,
+                    products_dir=other_pipeline.products_dir,
+                    workflow_options=workflow_options)
+        except AttributeError as e:
+            raise ValueError(
+                "Cannot chain to pipeline %s: %s"%(
+                    other_pipeline.name, repr(e)))
+
+        return p
+        
+
+    def _configure(self):
+        for otu_table in self.otu_tables:
+            barchart_path = util.new_file(
+                otu_table+"_barcharts", basedir=self.products_dir)
+            yield visualization.stacked_bar_chart(otu_table, barchart_path)
+
+
+    
+        
