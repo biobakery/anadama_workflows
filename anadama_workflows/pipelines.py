@@ -164,7 +164,7 @@ class SixteenSPipeline(Pipeline):
         # infer genes and pathways with picrust
         for otu_table in self.otu_tables:
             yield sixteen.picrust(
-                otu_table, 
+                otu_table, output_dir=self.products_dir,
                 **self.options.get('picrust', dict())
             )
 
