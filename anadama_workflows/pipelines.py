@@ -164,7 +164,7 @@ class SixteenSPipeline(Pipeline):
         # infer genes and pathways with picrust
         for otu_table in self.otu_tables:
             yield sixteen.picrust(
-                otu_table, output_dir=self.products_dir,
+                otu_table, 
                 **self.options.get('picrust', dict())
             )
 
@@ -338,7 +338,7 @@ class VisualizationPipeline(Pipeline):
     def _chain(cls, other_pipeline, workflow_options=dict()):
         try:
             p = cls(otu_tables=other_pipeline.otu_tables,
-                    products_dir=other_pipeline.products_dir,
+                    products_dir=None,
                     workflow_options=workflow_options)
         except AttributeError as e:
             raise ValueError(
