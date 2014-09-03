@@ -338,13 +338,13 @@ class VisualizationPipeline(Pipeline):
     def _chain(cls, other_pipeline, workflow_options=dict()):
         try:
             p = cls(otu_tables=other_pipeline.otu_tables,
-                    products_dir=None,
                     workflow_options=workflow_options)
         except AttributeError as e:
             raise ValueError(
                 "Cannot chain to pipeline %s: %s"%(
                     other_pipeline.name, repr(e)))
 
+        p.products_dir=None
         return p
         
 
