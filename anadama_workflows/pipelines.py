@@ -8,7 +8,9 @@ from anadama import util
 from anadama.pipelines import Pipeline
 
 from . import settings
-from . import general, sixteen, wgs, alignment, visualization
+from . import general, sixteen, wgs
+from . import alignment, visualization, association
+
 
 class SixteenSPipeline(Pipeline):
 
