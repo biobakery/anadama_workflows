@@ -342,19 +342,40 @@ class VisualizationPipeline(Pipeline):
         super(VisualizationPipeline, self).__init__(*args, **kwargs)
 
 
-    @classmethod
-    def _chain(cls, other_pipeline, workflow_options=dict()):
-        try:
-            p = cls(otu_tables=other_pipeline.otu_tables,
-                    workflow_options=workflow_options)
-        except AttributeError as e:
-            raise ValueError(
-                "Cannot chain to pipeline %s: %s"%(
-                    other_pipeline.name, repr(e)))
+    @property
+    def _inferred_sample_metadata_fname(self):
+        if self.otu_tables:
+            base_input = self.otu_tables[0]
+        elif self.pcl_files:
+            base_input = self.pcl_files[0]
+        else:
+            raise ValueError("Unable to infer map.txt file location"
+                             " because pipeline inputs are empty")
 
-        p.products_dir=None
-        return p
-        
+        dir_ = os.path.dirname(base_input)
+        return os.path.join(dir_, "map.txt")
+
+
+    def _get_or_create_sample_metadata(self):
+        if type(self.sample_metadata) is not str:
+            sample_metadata_fname = self._inferred_sample_metadata_fname
+            try:
+                util.serialize_map_file(self.sample_metadata, 
+                                        sample_metadata_fname)
+            except IndexError as e:
+                raise ValueError("The provided sample metadata is not in list"
+                                 " format, nor is it a string. Sample_metadata"
+                                 " should either be a string for a map.txt"
+                                 " filename or a list of namedtuples"
+                                 " representing the sample metadata")
+            return sample_metadata_fname
+        else:
+            if not os.path.exists(self.sample_metadata):
+                raise ValueError("The provided sample metadata file "
+                                 "does not exist: "+self.sample_metadata)
+            else:
+                return self.sample_metadata
+                
 
     def _configure(self):
         for otu_table in self.otu_tables:
@@ -362,6 +383,24 @@ class VisualizationPipeline(Pipeline):
                 otu_table+"_barcharts", basedir=self.products_dir)
             yield visualization.stacked_bar_chart(otu_table, barchart_path)
 
+            tsv_filename = otu_table+".tsv"
+            yield association.biom_to_tsv(otu_table, tsv_filename)
+            nice_tsv_filename = util.addtag(tsv_filename, 'maaslin')
+            yield association.qiime_to_maaslin(tsv_filename, nice_tsv_filename)
+            pcl_filename = otu_table+".pcl"
+            yield association.merge_otu_metadata(
+                nice_tsv_filename, 
+                self._get_or_create_sample_metadata(),
+                pcl_filename
+            )
+            self.pcl_files.append(pcl_filename)
 
-    
+        for pcl_file in self.pcl_files:
+            yield visualization.breadcrumbs_pcoa_plot(
+                pcl_file, pcl_file+"_pcoa_plot.png",
+                CoordinatesMatrix = pcl_file+"_pcoa_coords.txt"
+            )
+
+                
         
+            
