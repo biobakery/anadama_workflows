@@ -76,10 +76,10 @@ class SixteenSPipeline(Pipeline):
                                   respective workflow functions.
         """
 
-        self.sample_metadata = sample_metadata
-        self.raw_seq_files = raw_seq_files
-        self.demuxed_fasta_files = demuxed_fasta_files
-        self.otu_tables = otu_tables
+        self.add_product('sample_metadata',     sample_metadata)
+        self.add_product('raw_seq_files',       raw_seq_files)
+        self.add_product('demuxed_fasta_files', demuxed_fasta_files)
+        self.add_product('otu_tables',          otu_tables)
 
         if type(sample_metadata) is str:
             self.sample_metadata = util.deserialize_map_file(samples)
@@ -253,9 +253,6 @@ class WGSPipeline(Pipeline):
                                   respective workflow functions.
 
         """
-        self.raw_seq_files = raw_seq_files
-        self.intermediate_fastq_files = intermediate_fastq_files
-        self.alignment_result_files = alignment_result_files
         if not products_dir:
             products_dir = settings.workflows.product_directory
         self.products_dir = os.path.realpath(products_dir)
@@ -269,6 +266,10 @@ class WGSPipeline(Pipeline):
             'humann':           { }
         }
         self.options.update(workflow_options)
+
+        self.add_product('raw_seq_files',            raw_seq_files)
+        self.add_product('intermediate_fastq_files', intermediate_fastq_files)
+        self.add_product('alignment_result_files',   alignment_result_files)
 
 
         super(WGSPipeline, self).__init__(*args, **kwargs)
@@ -318,16 +319,21 @@ class VisualizationPipeline(Pipeline):
     
     name = "Visualization"
 
-    def __init__(self, otu_tables=list(), 
+    def __init__(self, sample_metadata,
+                 otu_tables=list(),
+                 pcl_files=list(),
                  workflow_options=dict(),
                  products_dir=str(),
                  *args, **kwargs):
+
         self.options = {
             'stacked_bar_chart': { }
         }
         self.options.update(workflow_options)
         
-        self.otu_tables = otu_tables
+        self.add_product('sample_metadata', sample_metadata)
+        self.add_product('otu_tables',      otu_tables)
+        self.add_product('pcl_files',       pcl_files)
 
         if not products_dir:
             products_dir = settings.workflows.product_directory
