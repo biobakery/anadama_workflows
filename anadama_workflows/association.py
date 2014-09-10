@@ -15,8 +15,9 @@ def biom_to_tsv(infile, outfile):
     """
 
     cmd="biom convert -i " + infile + " -o " + \
-        outfile + " --to-tsv --header-key taxonomy " + \
-        "--output-metadata-id \"Consensus Lineage\""
+        outfile + " -b --header-key taxonomy " + \
+        "--output-metadata-id \"Consensus Lineage\"" + \
+        "--table-type 'otu table'"
 
     return {
         "name": "biom_to_tsv: " + infile,
