@@ -40,6 +40,12 @@ class SixteenSPipeline(Pipeline):
     """
 
     name = "16S"
+    products = {
+        "sample_metadata"     : list(),
+        "raw_seq_files"       : list(),
+        "demuxed_fasta_files" : list(),
+        "otu_tables"          : list()
+    }
 
     def __init__(self,
                  sample_metadata,
@@ -76,10 +82,12 @@ class SixteenSPipeline(Pipeline):
                                   respective workflow functions.
         """
 
-        self.add_product('sample_metadata',     sample_metadata)
-        self.add_product('raw_seq_files',       raw_seq_files)
-        self.add_product('demuxed_fasta_files', demuxed_fasta_files)
-        self.add_product('otu_tables',          otu_tables)
+        super(SixteenSPipeline, self).__init__(*args, **kwargs)
+
+        self.add_products(sample_metadata     = sample_metadata,
+                          raw_seq_files       = raw_seq_files,
+                          demuxed_fasta_files = demuxed_fasta_files,
+                          otu_tables          = otu_tables)
 
         if type(sample_metadata) is str:
             self.sample_metadata = util.deserialize_map_file(samples)
@@ -104,8 +112,6 @@ class SixteenSPipeline(Pipeline):
         }
         self.options.update(workflow_options)
         
-        super(SixteenSPipeline, self).__init__(*args, **kwargs)
-
 
     def _configure(self):
         # ensure all files are decompressed
@@ -228,6 +234,11 @@ class WGSPipeline(Pipeline):
     """
 
     name = "WGS"
+    products = {
+            "raw_seq_files"            : list(),
+            "intermediate_fastq_files" : list(),
+            "alignment_result_files"   : list()
+    }
 
     def __init__(self, raw_seq_files=list(), 
                  intermediate_fastq_files=list(),
@@ -253,6 +264,8 @@ class WGSPipeline(Pipeline):
                                   respective workflow functions.
 
         """
+        super(WGSPipeline, self).__init__(*args, **kwargs)
+
         if not products_dir:
             products_dir = settings.workflows.product_directory
         self.products_dir = os.path.realpath(products_dir)
@@ -267,13 +280,12 @@ class WGSPipeline(Pipeline):
         }
         self.options.update(workflow_options)
 
-        self.add_product('raw_seq_files',            raw_seq_files)
-        self.add_product('intermediate_fastq_files', intermediate_fastq_files)
-        self.add_product('alignment_result_files',   alignment_result_files)
+        self.add_products(
+            raw_seq_files            = raw_seq_files,
+            intermediate_fastq_files = intermediate_fastq_files,
+            alignment_result_files   = alignment_result_files
+        )
 
-
-        super(WGSPipeline, self).__init__(*args, **kwargs)
-        
 
     def _configure(self):
         # Convert all raw files into fastq files; run them through
@@ -319,27 +331,32 @@ class VisualizationPipeline(Pipeline):
     
     name = "Visualization"
 
+    products = {
+        'sample_metadata': list(),
+        'otu_tables'     : list(),
+        'pcl_files'      : list()
+    }
+
     def __init__(self, sample_metadata,
                  otu_tables=list(),
                  pcl_files=list(),
                  workflow_options=dict(),
                  products_dir=str(),
                  *args, **kwargs):
+        super(VisualizationPipeline, self).__init__(*args, **kwargs)
 
         self.options = {
             'stacked_bar_chart': { }
         }
         self.options.update(workflow_options)
         
-        self.add_product('sample_metadata', sample_metadata)
-        self.add_product('otu_tables',      otu_tables)
-        self.add_product('pcl_files',       pcl_files)
+        self.add_products(sample_metadata = sample_metadata,
+                          otu_tables      = otu_tables,
+                          pcl_files       = pcl_files)
 
         if not products_dir:
             products_dir = settings.workflows.product_directory
         self.products_dir = os.path.realpath(products_dir)
-
-        super(VisualizationPipeline, self).__init__(*args, **kwargs)
 
 
     @property
