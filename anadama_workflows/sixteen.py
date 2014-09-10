@@ -263,7 +263,7 @@ def pick_otus_open_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
 
 
 @requires(binaries=['qiime_cmd'])
-def merge_otu_tables(files_list, name, output_dir):
+def merge_otu_tables(files_list, name):
     """Workflow to merge OTU tables into a single OTU table. Also accepts
     biom-formatted OTU tables.
 
@@ -276,14 +276,13 @@ def merge_otu_tables(files_list, name, output_dir):
       - Qiime 1.8.0: https://github.com/qiime/qiime-deploy
 
     """
-    output_file = new_file(name, basedir=output_dir)
     cmd = "qiime_cmd merge_otu_tables.py -i {filenames} -o {output}"
     cmd = cmd.format( filenames = ",".join(files_list), 
-                      output    = output_file  )
+                      output    = name  )
     return {
-        "name": "merge_otu_tables: "+os.path.basename(name),
+        "name": "merge_otu_tables: "+name,
         "actions": [cmd],
-        "targets": [output_file],
+        "targets": [name],
         "file_dep": files_list
     }
 

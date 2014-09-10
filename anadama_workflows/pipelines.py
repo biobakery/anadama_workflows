@@ -106,9 +106,6 @@ class SixteenSPipeline(Pipeline):
             },
             'pick_otus_closed_ref': { },
             'picrust':              { },
-            'merge_otu_tables':     {
-                'name': 'all_otu_tables_merged.biom'
-            }
         }
         self.options.update(workflow_options)
         
@@ -174,14 +171,6 @@ class SixteenSPipeline(Pipeline):
             yield sixteen.picrust(
                 otu_table, 
                 **self.options.get('picrust', dict())
-            )
-
-        # now merge all otus together
-        if self.otu_tables:
-            yield sixteen.merge_otu_tables(
-                self.otu_tables,
-                output_dir=self.products_dir,
-                **self.options.get('merge_otu_tables', dict())
             )
 
 
@@ -332,14 +321,16 @@ class VisualizationPipeline(Pipeline):
     name = "Visualization"
 
     products = {
-        'sample_metadata': list(),
-        'otu_tables'     : list(),
-        'pcl_files'      : list()
+        'sample_metadata'  : str(),
+        'otu_tables'       : list(),
+        'merged_otu_tables': list(),
+        'pcl_files'        : list()
     }
 
     def __init__(self, sample_metadata,
                  otu_tables=list(),
                  pcl_files=list(),
+                 merged_otu_tables=list(),
                  workflow_options=dict(),
                  products_dir=str(),
                  *args, **kwargs):
@@ -350,9 +341,10 @@ class VisualizationPipeline(Pipeline):
         }
         self.options.update(workflow_options)
         
-        self.add_products(sample_metadata = sample_metadata,
-                          otu_tables      = otu_tables,
-                          pcl_files       = pcl_files)
+        self.add_products(sample_metadata   = sample_metadata,
+                          otu_tables        = otu_tables,
+                          merged_otu_tables = merged_otu_tables,
+                          pcl_files         = pcl_files)
 
         if not products_dir:
             products_dir = settings.workflows.product_directory
@@ -395,7 +387,17 @@ class VisualizationPipeline(Pipeline):
                 
 
     def _configure(self):
-        for otu_table in self.otu_tables:
+
+        if self.otu_tables:
+            merged_name = util.addtag(self.otu_tables[0], "merged")
+            merged_file = util.new_file(merged_name, basedir=self.products_dir)
+            yield sixteen.merge_otu_tables(
+                self.otu_tables,
+                name=merged_file
+            )
+            self.merged_otu_tables.append(merged_file)
+
+        for otu_table in self.merged_otu_tables:
             barchart_path = util.new_file(
                 otu_table+"_barcharts", basedir=self.products_dir)
             yield visualization.stacked_bar_chart(otu_table, barchart_path)
