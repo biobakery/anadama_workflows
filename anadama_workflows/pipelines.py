@@ -8,7 +8,9 @@ from anadama import util
 from anadama.pipelines import Pipeline
 
 from . import settings
-from . import general, sixteen, wgs, alignment, visualization
+from . import general, sixteen, wgs
+from . import alignment, visualization, association
+
 
 class SixteenSPipeline(Pipeline):
 
@@ -38,6 +40,12 @@ class SixteenSPipeline(Pipeline):
     """
 
     name = "16S"
+    products = {
+        "sample_metadata"     : list(),
+        "raw_seq_files"       : list(),
+        "demuxed_fasta_files" : list(),
+        "otu_tables"          : list()
+    }
 
     def __init__(self,
                  sample_metadata,
@@ -74,10 +82,12 @@ class SixteenSPipeline(Pipeline):
                                   respective workflow functions.
         """
 
-        self.sample_metadata = sample_metadata
-        self.raw_seq_files = raw_seq_files
-        self.demuxed_fasta_files = demuxed_fasta_files
-        self.otu_tables = otu_tables
+        super(SixteenSPipeline, self).__init__(*args, **kwargs)
+
+        self.add_products(sample_metadata     = sample_metadata,
+                          raw_seq_files       = raw_seq_files,
+                          demuxed_fasta_files = demuxed_fasta_files,
+                          otu_tables          = otu_tables)
 
         if type(sample_metadata) is str:
             self.sample_metadata = util.deserialize_map_file(samples)
@@ -96,14 +106,9 @@ class SixteenSPipeline(Pipeline):
             },
             'pick_otus_closed_ref': { },
             'picrust':              { },
-            'merge_otu_tables':     {
-                'name': 'all_otu_tables_merged.biom'
-            }
         }
         self.options.update(workflow_options)
         
-        super(SixteenSPipeline, self).__init__(*args, **kwargs)
-
 
     def _configure(self):
         # ensure all files are decompressed
@@ -168,14 +173,6 @@ class SixteenSPipeline(Pipeline):
                 **self.options.get('picrust', dict())
             )
 
-        # now merge all otus together
-        if self.otu_tables:
-            yield sixteen.merge_otu_tables(
-                self.otu_tables,
-                output_dir=self.products_dir,
-                **self.options.get('merge_otu_tables', dict())
-            )
-
 
     @staticmethod
     def _filter_files_for_sample(files_list, sample_group):
@@ -226,6 +223,11 @@ class WGSPipeline(Pipeline):
     """
 
     name = "WGS"
+    products = {
+            "raw_seq_files"            : list(),
+            "intermediate_fastq_files" : list(),
+            "alignment_result_files"   : list()
+    }
 
     def __init__(self, raw_seq_files=list(), 
                  intermediate_fastq_files=list(),
@@ -251,9 +253,8 @@ class WGSPipeline(Pipeline):
                                   respective workflow functions.
 
         """
-        self.raw_seq_files = raw_seq_files
-        self.intermediate_fastq_files = intermediate_fastq_files
-        self.alignment_result_files = alignment_result_files
+        super(WGSPipeline, self).__init__(*args, **kwargs)
+
         if not products_dir:
             products_dir = settings.workflows.product_directory
         self.products_dir = os.path.realpath(products_dir)
@@ -268,9 +269,12 @@ class WGSPipeline(Pipeline):
         }
         self.options.update(workflow_options)
 
+        self.add_products(
+            raw_seq_files            = raw_seq_files,
+            intermediate_fastq_files = intermediate_fastq_files,
+            alignment_result_files   = alignment_result_files
+        )
 
-        super(WGSPipeline, self).__init__(*args, **kwargs)
-        
 
     def _configure(self):
         # Convert all raw files into fastq files; run them through
@@ -316,44 +320,106 @@ class VisualizationPipeline(Pipeline):
     
     name = "Visualization"
 
-    def __init__(self, otu_tables=list(), 
+    products = {
+        'sample_metadata'  : str(),
+        'otu_tables'       : list(),
+        'merged_otu_tables': list(),
+        'pcl_files'        : list()
+    }
+
+    def __init__(self, sample_metadata,
+                 otu_tables=list(),
+                 pcl_files=list(),
+                 merged_otu_tables=list(),
                  workflow_options=dict(),
                  products_dir=str(),
                  *args, **kwargs):
+        super(VisualizationPipeline, self).__init__(*args, **kwargs)
+
         self.options = {
             'stacked_bar_chart': { }
         }
         self.options.update(workflow_options)
         
-        self.otu_tables = otu_tables
+        self.add_products(sample_metadata   = sample_metadata,
+                          otu_tables        = otu_tables,
+                          merged_otu_tables = merged_otu_tables,
+                          pcl_files         = pcl_files)
 
         if not products_dir:
             products_dir = settings.workflows.product_directory
         self.products_dir = os.path.realpath(products_dir)
 
-        super(VisualizationPipeline, self).__init__(*args, **kwargs)
+
+    @property
+    def _inferred_sample_metadata_fname(self):
+        if self.otu_tables:
+            base_input = self.otu_tables[0]
+        elif self.pcl_files:
+            base_input = self.pcl_files[0]
+        else:
+            raise ValueError("Unable to infer map.txt file location"
+                             " because pipeline inputs are empty")
+
+        dir_ = os.path.dirname(base_input)
+        return os.path.join(dir_, "map.txt")
 
 
-    @classmethod
-    def _chain(cls, other_pipeline, workflow_options=dict()):
-        try:
-            p = cls(otu_tables=other_pipeline.otu_tables,
-                    workflow_options=workflow_options)
-        except AttributeError as e:
-            raise ValueError(
-                "Cannot chain to pipeline %s: %s"%(
-                    other_pipeline.name, repr(e)))
-
-        p.products_dir=None
-        return p
-        
+    def _get_or_create_sample_metadata(self):
+        if type(self.sample_metadata) is not str:
+            sample_metadata_fname = self._inferred_sample_metadata_fname
+            try:
+                util.serialize_map_file(self.sample_metadata, 
+                                        sample_metadata_fname)
+            except IndexError as e:
+                raise ValueError("The provided sample metadata is not in list"
+                                 " format, nor is it a string. Sample_metadata"
+                                 " should either be a string for a map.txt"
+                                 " filename or a list of namedtuples"
+                                 " representing the sample metadata")
+            return sample_metadata_fname
+        else:
+            if not os.path.exists(self.sample_metadata):
+                raise ValueError("The provided sample metadata file "
+                                 "does not exist: "+self.sample_metadata)
+            else:
+                return self.sample_metadata
+                
 
     def _configure(self):
-        for otu_table in self.otu_tables:
+
+        if self.otu_tables:
+            merged_name = util.addtag(self.otu_tables[0], "merged")
+            merged_file = util.new_file(merged_name, basedir=self.products_dir)
+            yield sixteen.merge_otu_tables(
+                self.otu_tables,
+                name=merged_file
+            )
+            self.merged_otu_tables.append(merged_file)
+
+        for otu_table in self.merged_otu_tables:
             barchart_path = util.new_file(
                 otu_table+"_barcharts", basedir=self.products_dir)
             yield visualization.stacked_bar_chart(otu_table, barchart_path)
 
+            tsv_filename = otu_table+".tsv"
+            yield association.biom_to_tsv(otu_table, tsv_filename)
+            nice_tsv_filename = util.addtag(tsv_filename, 'maaslin')
+            yield association.qiime_to_maaslin(tsv_filename, nice_tsv_filename)
+            pcl_filename = otu_table+".pcl"
+            yield association.merge_otu_metadata(
+                nice_tsv_filename, 
+                self._get_or_create_sample_metadata(),
+                pcl_filename
+            )
+            self.pcl_files.append(pcl_filename)
 
-    
+        for pcl_file in self.pcl_files:
+            yield visualization.breadcrumbs_pcoa_plot(
+                pcl_file, pcl_file+"_pcoa_plot.png",
+                CoordinatesMatrix = pcl_file+"_pcoa_coords.txt"
+            )
+
+                
         
+            
