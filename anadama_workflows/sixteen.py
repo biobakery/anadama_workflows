@@ -276,14 +276,16 @@ def merge_otu_tables(files_list, name):
       - Qiime 1.8.0: https://github.com/qiime/qiime-deploy
 
     """
+    # strip empty files
+    files = [file for file in files_list if os.stat(file)[6]!=0]
     cmd = "qiime_cmd merge_otu_tables.py -i {filenames} -o {output}"
-    cmd = cmd.format( filenames = ",".join(files_list), 
+    cmd = cmd.format( filenames = ",".join(files), 
                       output    = name  )
     return {
         "name": "merge_otu_tables: "+name,
         "actions": [cmd],
         "targets": [name],
-        "file_dep": files_list
+        "file_dep": files
     }
 
 
