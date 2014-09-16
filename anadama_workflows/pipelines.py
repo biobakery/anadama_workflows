@@ -9,7 +9,7 @@ from anadama.pipelines import Pipeline
 
 from . import settings
 from . import general, sixteen, wgs
-from . import alignment, visualization, association
+from . import alignment, visualization, association, biom
 
 
 class SixteenSPipeline(Pipeline):
@@ -395,7 +395,12 @@ class VisualizationPipeline(Pipeline):
                 self.otu_tables,
                 name=merged_file
             )
-            self.merged_otu_tables.append(merged_file)
+            meta_biom_name = util.addtag(merged_file, "meta")
+            yield biom.add_metadata(
+                merged_file, meta_biom_name, 
+                self._get_or_create_sample_metadata()
+            )
+            self.merged_otu_tables.append(meta_biom_name)
 
         for otu_table in self.merged_otu_tables:
             barchart_path = util.new_file(
