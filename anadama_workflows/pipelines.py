@@ -232,12 +232,16 @@ class WGSPipeline(Pipeline, SampleFilterMixin):
 
     name = "WGS"
     products = {
-            "raw_seq_files"            : list(),
-            "intermediate_fastq_files" : list(),
-            "alignment_result_files"   : list()
+        "sample_metadata"          : list(),
+        "raw_seq_files"            : list(),
+        "intermediate_fastq_files" : list(),
+        "alignment_result_files"   : list(),
+        "metaphlan_results"        : list(),
+        "otu_tables"               : list(),
     }
 
-    def __init__(self, raw_seq_files=list(), 
+    def __init__(self, sample_metadata,
+                 raw_seq_files=list(), 
                  intermediate_fastq_files=list(),
                  alignment_result_files=list(),
                  products_dir=str(),
@@ -278,9 +282,12 @@ class WGSPipeline(Pipeline, SampleFilterMixin):
         self.options.update(workflow_options)
 
         self.add_products(
+            sample_metadata          = sample_metadata,
             raw_seq_files            = raw_seq_files,
             intermediate_fastq_files = intermediate_fastq_files,
-            alignment_result_files   = alignment_result_files
+            alignment_result_files   = alignment_result_files,
+            metaphlan_results        = list(),
+            otu_tables               = list()
         )
 
 
@@ -292,17 +299,28 @@ class WGSPipeline(Pipeline, SampleFilterMixin):
                 files = [files]
             fastq_file = util.new_file( basename(files[0])+"_merged.fastq",
                                         basedir=self.products_dir )
-
             yield general.sequence_convert(
                 files, fastq_file, 
                 **self.options.get('sequence_convert', dict())
             )
             self.intermediate_fastq_files.append(fastq_file)
+
+            metaphlan_file = util.new_file( 
+                basename(files[0])+"_merged.metaphlan2.pcl",
+                basedir=self.products_dir )
+            otu_table = metaphlan_file.replace('.pcl', '.biom')
             yield wgs.metaphlan2(
-                [fastq_file],
+                [fastq_file], output_file=metaphlan_file,
+                biom=otu_table,
+                # first index is for first item in list of samples
+                # second index is to get the sample id from the sample
+                sample_id=self._filter_samples_for_file(self.sample_metadata,
+                                                        fastq_file)[0][0],
                 **self.options.get('metaphlan2', dict())
             )
-            
+            self.metaphlan_results.append(metaphlan_file)
+            self.otu_tables.append(otu_table)
+
         # Next align the fastq files against the kegg proks reduced db
         for fastq_file in self.intermediate_fastq_files:
             alignment_file = fastq_file+".sam"
