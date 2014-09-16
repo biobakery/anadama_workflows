@@ -2,29 +2,8 @@ import os, re
 
 from anadama.decorators import requires
 
-@requires(binaries=['biom'])
-def biom_to_tsv(infile, outfile):
-    """ Convert a biom file to a tsv using the biom package 
+from biom import biom_to_tsv
 
-    param: infile: file of the biom format
-
-    param: outfile: file of the tsv format
-
-    External dependencies
-    - biom-format: http://biom-format.org/
-    """
-
-    cmd="biom convert -i " + infile + " -o " + \
-        outfile + " -b --header-key taxonomy " + \
-        "--output-metadata-id \"Consensus Lineage\" " + \
-        "--table-type 'otu table'"
-
-    return {
-        "name": "biom_to_tsv: " + infile,
-        "actions": [cmd],
-        "file_dep": [infile],
-        "targets": [outfile]
-    }
 
 @requires(binaries=['qiimeToMaaslin.py'])
 def qiime_to_maaslin(in_datafile, outfile):
