@@ -12,7 +12,27 @@ from . import general, sixteen, wgs
 from . import alignment, visualization, association, biom
 
 
-class SixteenSPipeline(Pipeline):
+def _filter(func, iterable):
+    filtered = filter(func, iterable)
+    return filtered or iterable
+
+class SampleFilterMixin(object):
+
+    @staticmethod
+    def _filter_files_for_sample(files_list, sample_group, 
+                                 key=lambda val: getattr(val, "Run_accession")):
+        return _filter(lambda f: any(key(s) in f for s in sample_group),
+                       files_list )
+
+    @staticmethod
+    def _filter_samples_for_file(sample_group, file_, 
+                                 key=lambda val: val[0]):
+        return _filter(lambda sample: key(sample) in file_,
+                       sample_group)
+
+
+
+class SixteenSPipeline(Pipeline, SampleFilterMixin):
 
     """Pipeline for analyzing 16S data.
 
@@ -173,18 +193,6 @@ class SixteenSPipeline(Pipeline):
                 **self.options.get('picrust', dict())
             )
 
-
-    @staticmethod
-    def _filter_files_for_sample(files_list, sample_group):
-        try:
-            return [ 
-                f for f in files_list
-                if any(s.Run_accession in f for s in sample_group) 
-            ]
-        except AttributeError:
-            return files_list
-
-    
     @staticmethod
     def _determine_barcode_type(sample_group):
         lengths = ( len(s.BarcodeSequence) for s in sample_group )
@@ -198,7 +206,7 @@ class SixteenSPipeline(Pipeline):
 
 
 
-class WGSPipeline(Pipeline):
+class WGSPipeline(Pipeline, SampleFilterMixin):
 
     """Pipeline for analyzing whole metagenome shotgun sequence data.
     Produces taxonomic profiles with metaphlan2 and gene, pathway
