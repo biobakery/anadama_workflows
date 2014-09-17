@@ -13,7 +13,10 @@ from . import alignment, visualization, association, biom
 
 
 def _filter(func, iterable):
-    filtered = filter(func, iterable)
+    try:
+        filtered = filter(func, iterable)
+    except AttributeError:
+        return iterable
     return filtered or iterable
 
 class SampleFilterMixin(object):
