@@ -92,7 +92,11 @@ def metaphlan2(files_list, **opts):
     cmd += (" | metaphlan2.py"
             + " "+all_opts )
 
+    targets = [outfile, bowtie2out]
+    if 'biom' in opts:
+        targets.append(opts['biom'])
+
     return dict(name     = "metaphlan2:"+outfile,
                 actions  = [cmd],
                 file_dep = infiles_list,
-                targets  = [outfile, bowtie2out])
+                targets  = targets )
