@@ -276,12 +276,18 @@ def merge_otu_tables(files_list, name):
       - Qiime 1.8.0: https://github.com/qiime/qiime-deploy
 
     """
-    cmd = "qiime_cmd merge_otu_tables.py -i {filenames} -o {output}"
-    cmd = cmd.format( filenames = ",".join(files_list), 
-                      output    = name  )
+    
+    def merge_filter(deps,targets):
+        files = [file for file in deps
+                 if os.path.exists(file) and os.stat(file).st_size > 0] 
+        cmd = "qiime_cmd merge_otu_tables.py -i {filenames} -o {output}"
+        cmd = cmd.format( filenames = ",".join(files), 
+                          output    = name  )
+        return CmdAction(cmd, verbose=True).execute()
+
     return {
         "name": "merge_otu_tables: "+name,
-        "actions": [cmd],
+        "actions": [(merge_filter, [files_list])],
         "targets": [name],
         "file_dep": files_list
     }
@@ -345,9 +351,14 @@ def picrust(file, output_dir=None, verbose=True, **opts):
                            ' --header-key taxonomy --to-json'
                            ' -i {} -o {} '.format(file, converted),
                            verbose=verbose)
-    def run():
+    def run(targets):
         # try to run without converting to json, if that fails,
         # convert first, then run on the json-converted biom file
+        if os.stat(file).st_size < 1:
+            for target in targets:
+                open(target, "w").close()
+            return True
+
         return strategies.backup(
             (strategies.Group(CmdAction(cmd1%(file), verbose=verbose),
                               CmdAction(cmd2%(file), verbose=verbose)),
