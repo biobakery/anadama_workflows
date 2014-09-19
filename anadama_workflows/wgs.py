@@ -71,8 +71,8 @@ def metaphlan2(files_list, **opts):
     """
 
     infiles_list  = files_list
-    outfile       = new_file(addext(files_list[0], "metaphlan2"))
-    bowtie2out    = new_file(addext(files_list[0], "bowtie2out.txt"))
+    def_outfile       = new_file(addext(files_list[0], "metaphlan2"))
+    def_bowtie2out    = new_file(addext(files_list[0], "bowtie2out.txt"))
 
     seqtype = guess_seq_filetype(infiles_list[0])
     if seqtype not in ('fasta', 'fastq'):
@@ -81,22 +81,21 @@ def metaphlan2(files_list, **opts):
     all_opts = { 'bt2_ps'      : 'very-sensitive',
                  'bowtie2db'   : settings.workflows.metaphlan2.bowtie2db,
                  'mpa_pkl'     : settings.workflows.metaphlan2.mpa_pkl,
-                 "bowtie2out"  : bowtie2out,
-                 "output_file" : outfile,
+                 "bowtie2out"  : def_bowtie2out,
+                 "output_file" : def_outfile,
                  "input_type"  : biopython_to_metaphlan[seqtype]  }
 
     all_opts.update(opts)
-    all_opts = dict_to_cmd_opts(all_opts)
-
+    
     cmd = starters.cat(infiles_list, guess_from=infiles_list[0])
     cmd += (" | metaphlan2.py"
-            + " "+all_opts )
+            + " "+dict_to_cmd_opts(all_opts) )
 
-    targets = [outfile, bowtie2out]
+    targets = [all_opts['output_file'], all_opts['bowtie2out']]
     if 'biom' in opts:
         targets.append(opts['biom'])
 
-    return dict(name     = "metaphlan2:"+outfile,
+    return dict(name     = "metaphlan2:"+all_opts['output_file'],
                 actions  = [cmd],
                 file_dep = infiles_list,
                 targets  = targets )
