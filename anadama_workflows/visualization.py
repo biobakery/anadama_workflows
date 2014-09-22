@@ -18,11 +18,16 @@ def stacked_bar_chart(biom_fname, output_dir, qiime_opts=dict()):
     opts = dict_to_cmd_opts(default_opts)
     cmd += opts
 
+    target = os.path.join(
+        output_dir,
+        addtag( os.path.basename(biom_fname), "L1")
+    )
+
     yield {
         "name"     : "stacked_bar_chart: "+output_dir,
         "actions"  : [cmd],
         "file_dep" : [biom_fname],
-        "targets"  : [os.path.join(output_dir, addtag(biom_fname, "L1"))]
+        "targets"  : [target]
     }
 
 
@@ -64,11 +69,14 @@ def breadcrumbs_pcoa_plot(pcl_fname, output_plot_fname, **opts):
         pcoa_cmd += " "+pcl_fname+" "
         return CmdAction(pcoa_cmd, verbose=True).execute()
 
+    targets = [output_plot_fname]
+    if 'CoordinatesMatrix' in default_opts:
+        targets.append(default_opts['CoordinatesMatrix'])
 
     yield {
         "name": "breadcrumbs_pcoa_plot: "+output_plot_fname,
         "actions": [run],
         "file_dep": [pcl_fname],
-        "targets": [output_plot_fname]
+        "targets": targets
     }
 
