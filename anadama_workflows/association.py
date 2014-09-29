@@ -65,8 +65,8 @@ def create_maaslin_read_config(metadata_file, pcl_file, read_config_file):
         header=file_handle.readline()
         file_handle.close()
 
-        # sort the columns
-        columns=header.split("\t")
+        # sort the columns (ignoring the first column, which is sampleid) 
+        columns=header.strip().split("\t")[1:]
         metadata_reference_column=sorted(columns)[-1]
 
         # identify the reference for the abundance column
