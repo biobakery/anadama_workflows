@@ -33,6 +33,7 @@ def breadcrumbs_pcoa_plot(pcl_fname, output_plot_fname, **opts):
     default_opts = {
         "meta"       : None,
         "id"         : None,
+        "noShape"    : None,
         "outputFile" : output_plot_fname
     }
     default_opts.update(opts)
