@@ -8,6 +8,41 @@ from anadama.decorators import requires
 @requires(binaries=['usearch7', 'sequence_pair'])
 def usearch_stitch(input_fastq_pair, output_fastq, verbose=True, 
                    remove_tempfiles=True, **opts):
+    """Workflow to stitch together paried reads using USEARCH version
+    7. The USEARCH binary should be named usearch7 in order for this
+    workflow to operate.  USEARCH version 7 expects the two sequence
+    read files to be completely aligned and will fail if this
+    condition is not met. The `usearch_stitch` workflow tries to
+    surmount this 'feature' by using the following rubric:
+
+    1. Run usearch 7
+    2. If 1. fails, re-sort the two sequence read files and drop unpaired
+       reads using the `sequence_pair` script. Run usearch 7 again.
+    3. If 2. fails, just copy the first sequence file to the `output_fastq` 
+       file.
+
+    :param input_fastq_pair: 2-Tuple of strings; file names of Input sequence
+                             read files. Forward reads should be the first 
+                             item, while reverse reads should be the second 
+                             item in the tuple
+    :param output_fastq: String; name of resulting stitched fastq file
+    :keyword verbose: Boolean; if true, print commands at runtime as they 
+                      are executed. Defaults to true.
+    :keyword remove_tempfiles: Boolean; if true, removes any files produced 
+                               by `sequence_pair`
+    :keyword **opts: Any additional keyword arguments are passed to usearch7 
+                     as command line flags. By default, it passes 
+                     `fastq_truncqual=10` and `fastq_maxdiffs=3` as 
+                     '-fastq_truncqual 10' and '-fastq_maxdiffs 3', 
+                     respectively.
+
+    External dependencies
+      - USEARCH v7: http://www.drive5.com/usearch
+      - sequence_pair: Sequence pairing script that should come preinstalled 
+        with the `anadama_workflows` python module.
+
+    """
+
     stitch_cmd = ("usearch7"+ 
                   " -fastq_mergepairs {r1}"
                   " -reverse {r2}"
@@ -64,6 +99,26 @@ def usearch_stitch(input_fastq_pair, output_fastq, verbose=True,
 
 @requires(binaries=['usearch7'])
 def usearch_filter(input_fastq, output_fasta, verbose=True, **opts):
+    """Filter a fastq file, outputting sequences as fasta, using USEARCH
+    version 7. The USEARCH binary should be named usearch7 in order
+    for this workflow to operate.
+
+    :param input_fastq: String; file name of a single fastq file to be filtered.
+    :param output_fasta: String; name of resulting filtered fasta file
+    :keyword verbose: Boolean; if true, print commands at runtime as they 
+                      are executed. Defaults to true.
+    :keyword **opts: Any additional keyword arguments are passed to usearch7 
+                     as command line flags. By default, it passes 
+                     `fastq_minlen=200` and `fastq_truncqual=25` as 
+                     '-fastq_minlen 200' and '-fastq_truncqual 25', 
+                     respectively.
+
+    External dependencies
+      - USEARCH v7 http://www.drive5.com/usearch
+
+    """
+    
+
     cmd = ("usearch7"+
            " -fastq_filter "+input_fastq+
            " -fastaout "+output_fasta)

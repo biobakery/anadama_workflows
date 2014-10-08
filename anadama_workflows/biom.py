@@ -2,14 +2,15 @@ from anadama.decorators import requires
 
 @requires(binaries=['biom'])
 def to_tsv(infile, outfile):
-    """ Convert a biom file to a tsv using the biom package 
+    """Convert a biom file to a tsv (also known as pcl) file using the
+    biom package
 
-    param: infile: file of the biom format
+    :param infile: file of the biom format
 
-    param: outfile: file of the tsv format
+    :param outfile: file of the tsv format
 
     External dependencies
-    - biom-format: http://biom-format.org/
+      - biom-format: http://biom-format.org/
     """
 
     cmd="biom convert -i " + infile + " -o " + \
@@ -25,8 +26,26 @@ def to_tsv(infile, outfile):
     }
 biom_to_tsv = to_tsv
 
+
 @requires(binaries=['biom'])
 def add_metadata(infile, outfile, sample_metadata):
+    """Add sample-level metadata to a biom file. Sample-level metadata
+    should be in a format akin to
+    http://qiime.org/tutorials/tutorial.html#mapping-file-tab-delimited-txt
+
+    :param infile: String; name of the biom file to which metadata 
+                   shall be added
+    :param outfile: String; name of the resulting metadata-enriched biom file
+    :param sample_metadata: String; name of the sample-level metadata 
+                            tab-delimited text file. Sample attributes are
+                            taken from this file. Note: the sample names in
+                            the `sample_metadata` file must match the sample
+                            names in the biom file.
+
+    External dependencies
+      - biom-format: http://biom-format.org/
+    """
+
     return {
         "name": "biom_add_metadata: " + infile,
         "actions": [("biom add-metadata"
@@ -40,14 +59,14 @@ def add_metadata(infile, outfile, sample_metadata):
 
 @requires(binaries=['biom'])
 def from_pcl(infile, outfile):
-    """ Convert a biom file to a tsv using the biom package 
+    """Convert a pcl file to biom format using the biom package
 
-    param: infile: file of the biom format
-
-    param: outfile: file of the tsv format
+    :param infile: String; name of the input tsv or pcl file
+    :param outfile: String; name of the resulting converted biom file
 
     External dependencies
-    - biom-format: http://biom-format.org/
+      - biom-format: http://biom-format.org/
+
     """
 
     cmd="biom convert -i " + infile + " -o " + \

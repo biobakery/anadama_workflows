@@ -15,7 +15,11 @@ def extract(fname_from, fname_to=None):
     """Workflow for converting an input file from their zipped to
     their unzipped equivalent.
 
-    :param files_list: List; The input files to decompress
+    :param files_list: String; The input files to decompress
+
+    :keyword fname_to: String; optional name of the resulting decompressed 
+                       file. Defaults to the original file name, but with
+                       the outermost file extension removed.
 
     External dependencies:
       - gunzip: should come with gzip
@@ -39,7 +43,6 @@ def extract(fname_from, fname_to=None):
         return task
     else:
         return None
-
 
 
 @requires(binaries=['fastq_split'])
@@ -86,13 +89,16 @@ def fastq_split(files_list, fasta_fname, qual_fname,
         "targets": [fasta_fname, qual_fname]
     }
 
+
 @requires(binaries=['sequence_convert'])
-def sequence_convert(files_list, output_file=None, reverse_complement=False,
-                     from_format=None, format_to="fastq", lenfilters_list=list()):
+def sequence_convert(files_list, output_file=None,
+                     reverse_complement=False, from_format=None,
+                     format_to="fastq", lenfilters_list=list()):
     """ Workflow for converting between sequence file formats.
 
     :param files_list: List; List of input files
     :param output_file: String; File name for output file
+
     :keyword reverse_complement: Boolean; Set to True if the resulting 
                                  sequence file should be the reverse 
                                  complement of the input sequences
@@ -106,8 +112,8 @@ def sequence_convert(files_list, output_file=None, reverse_complement=False,
                               longer than 60 chars, for example, use >60.
 
     External dependencies:
-    - sequence_convert: python script that should come pre-installed with
-      the anadama_workflows module
+      - sequence_convert: python script that should come pre-installed with
+        the anadama_workflows module
     
     """
 
@@ -135,15 +141,3 @@ def sequence_convert(files_list, output_file=None, reverse_complement=False,
         "targets": [output_file]
     }
 
-
-###
-# Example workflow function for returning multiple tasks
-# 
-# def myworkflow(somefiles):
-#     stuff = _magic()
-
-#     for item in stuff:
-#         yield {
-#             "name": item.name,
-#             ...
-#         }

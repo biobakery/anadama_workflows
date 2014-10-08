@@ -7,14 +7,15 @@ from biom import biom_to_tsv
 
 @requires(binaries=['qiimeToMaaslin.py'])
 def qiime_to_maaslin(in_datafile, outfile):
-    """ Converts a tsv file from qiime to a maaslin format
+    """Converts a tsv file from qiime to a maaslin format
 
-    param: in_datafile: file of the qiime tsv format (from biom_to_tsv)
+    :param in_datafile: String; file of the qiime tsv format (from
+    biom_to_tsv)
 
-    param: outfile: file of the tsv format for input to maaslin
+    :param outfile: String; file of the tsv format for input to maaslin
 
     External dependencies
-    - QiimeToMaaslin: https://bitbucket.org/biobakery/qiimetomaaslin
+      - QiimeToMaaslin: https://bitbucket.org/biobakery/qiimetomaaslin
 
     """
 
@@ -28,20 +29,21 @@ def qiime_to_maaslin(in_datafile, outfile):
         "targets": [outfile]
     }
 
+
 @requires(binaries=['merge_metadata.py'])
 def merge_otu_metadata(otu_table,metadata_file,outfile):
     """ Use the merge python script from maaslin to merge
         the otu_table and the metadata into a single file.
         
 
-    param: otu_table: file of the tsv format (not formatted by qiime)
+    :param otu_table: String; file of the tsv format (not formatted by qiime)
 
-    param: metadata_file: file of metadata in tsv format
+    :param metadata_file: String; file of metadata in tsv format
 
-    param: outfile: file that is a merge of the otu and metadata
+    :param outfile: String; file that is a merge of the otu and metadata
 
     External dependencies
-    - Maaslin: https://bitbucket.org/biobakery/maaslin
+      - Maaslin: https://bitbucket.org/biobakery/maaslin
         
     """
 
@@ -55,9 +57,17 @@ def merge_otu_metadata(otu_table,metadata_file,outfile):
         "targets": [outfile]
     }
 
+
 def create_maaslin_read_config(metadata_file, pcl_file, read_config_file):
-    """ Creates a read config file for the maaslin run
-        using the otu and metadata files
+    """Creates a read config file for the maaslin run using the otu and
+    metadata files
+
+    :param metadata_file: String; filename of metadata file to get 
+                          sample/subject level metadata
+    :param pcl_file: String; filename of pcl file to scan for taxonomic profile.
+    :param read_config_file: String; filename of resulting read config 
+                             file for maaslin
+
     """
 
     def create_config(metadata_file, pcl_file, read_config_file):
@@ -102,16 +112,17 @@ def create_maaslin_read_config(metadata_file, pcl_file, read_config_file):
         "targets": [read_config_file]
     }
 
+
 @requires(binaries=['transpose.py'])
 def transpose(pcl_file, outfile):
     """ Transpose the merged pcl and metadata file
     
-    param: pcl_file: file that is the merge of the otu and metadata    
+    :param pcl_file: String; file that is the merge of the otu and metadata    
 
-    param: outfile: file that is the transpose of the pcl_file
+    :param outfile: String; file that is the transpose of the pcl_file
 
     External dependencies
-    - Maaslin: https://bitbucket.org/biobakery/maaslin
+      - Maaslin: https://bitbucket.org/biobakery/maaslin
         
     """
 
@@ -124,19 +135,22 @@ def transpose(pcl_file, outfile):
         "targets": [outfile]
     }
 
+
 @requires(binaries=['Maaslin.R'])
 def run_maaslin(read_config_file, maaslin_outfile, pcl_file):
-    """ Run the maaslin software
+    """Run the maaslin software. You probably don't want to use this
+    workflow on its own; the `maaslin` workflow encapsulates this
+    workflow and works on any OTU table.
 
-    param: read_config_file: file generated based on pcl and metadata
+    :param read_config_file: String; file generated based on pcl and metadata
 
-    param: maaslin_outfile: one of the output files written by maaslin
+    :param maaslin_outfile: String; one of the output files written by maaslin
     
-    param: pcl_file: file generated to meet maaslin format requirements
+    :param pcl_file: String; file generated to meet maaslin format requirements
 
     External dependencies
-    - Maaslin: https://bitbucket.org/biobakery/maaslin
-        
+      - Maaslin: https://bitbucket.org/biobakery/maaslin
+
     """
 
     cmd = "Maaslin.R -i " + read_config_file + " " + \
@@ -151,17 +165,17 @@ def run_maaslin(read_config_file, maaslin_outfile, pcl_file):
 
 
 def maaslin(otu_table, metadata_file):
-    """ Workflow to compute the significance of association in microbial community
-        using a transform abundance or relative function
-        table obtained from Qiime, HUMAnN or MetaPhlAn plus study metadata
+    """Workflow to compute the significance of association in microbial
+    community using a transform abundance or relative function table
+    obtained from Qiime, HUMAnN or MetaPhlAn plus study metadata
 
-    param: otu_table: file of the biom or tsv format
+    :param otu_table: String; file of the biom or tsv format
 
-    param: metadata_file: file of metadata in tsv format
+    :param metadata_file: String; file of metadata in tsv format
 
     External dependencies
-    - Maaslin: https://bitbucket.org/biobakery/maaslin
-        
+      - Maaslin: https://bitbucket.org/biobakery/maaslin
+
     """
     
     # place the output in the same location as the input

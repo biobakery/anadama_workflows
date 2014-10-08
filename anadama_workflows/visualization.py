@@ -7,6 +7,26 @@ from anadama.util import addtag, dict_to_cmd_opts
 
 @requires(binaries=["qiime_cmd"])
 def stacked_bar_chart(biom_fname, output_dir, qiime_opts=dict()):
+    """Workflow to produce stacked bar charts of biom-formatted taxonomic
+    profiles using QIIME's `summarize_taxa_through_plots.py`.
+
+    :param biom_fname: String; the file name of a single biom-formatted otu 
+                       table or taxonomic profile to be visualized.
+    :param output_dir: String; the full path to a directory wherein the 
+                       summary plots and charts will be placed
+    :keyword qiime_opts: Dictionary; A dictionary of command line options to be
+                         passed to the wrapped 
+                         summarize_taxa_through_plots.py script. No - or -- 
+                         flags are necessary; the correct - or --t flags are 
+                         inferred based on the length of the option. For 
+                         boolean options, use the key/value pattern of 
+                         { "my-option": "" }.
+
+    External dependencies
+      - Qiime 1.8.0: https://github.com/qiime/qiime-deploy
+
+    """
+
     cmd = ("qiime_cmd summarize_taxa_through_plots.py "
            "-i {} -o {} ".format(biom_fname, output_dir))
     
@@ -33,6 +53,23 @@ def stacked_bar_chart(biom_fname, output_dir, qiime_opts=dict()):
 
 @requires(binaries=["scriptPcoa.py"])
 def breadcrumbs_pcoa_plot(pcl_fname, output_plot_fname, **opts):
+    """Use breadcrumbs `scriptPcoa.py` script to produce principal
+    coordinate plots of pcl files.
+
+    :param pcl_fname: String; file name of the pcl-formatted taxonomic profile
+                      to visualize via `scriptPcoa.py`.
+    :param output_plot_fname: String; file name of the resulting image file.
+    :keyword **opts: Any additional keyword arguments are passed to 
+                     `scriptPcoa.py`  as command line flags. By default, 
+                     it passes `meta=None`, `id=None` and `noShape=None`, 
+                     which are converted into `--meta`, `--id`, and 
+                     `--noShape`, respectively.
+
+    External dependencies
+      - Breadcrumbs: https://bitbucket.org/biobakery/breadcrumbs
+
+    """
+
     pcoa_cmd = ("scriptPcoa.py ")
 
     default_opts = {

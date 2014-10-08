@@ -132,7 +132,8 @@ def pick_otus_closed_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
 
     External dependencies:
       - Qiime 1.8.0: https://github.com/qiime/qiime-deploy
-      - USEARCH: (only if using the usearch option) http://www.drive5.com/usearch/
+      - USEARCH: (only if using the usearch option) 
+        http://www.drive5.com/usearch/
 
     Resource utilization:
       - RAM: >1.5 G
@@ -184,6 +185,7 @@ def pick_otus_closed_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
         "file_dep": [input_fname]
     }
 
+
 @requires(binaries=['qiime_cmd', 'sequence_convert'])
 def pick_otus_open_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
     """Workflow to perform open-reference OTU picking. Similar to
@@ -210,7 +212,8 @@ def pick_otus_open_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
 
     External dependencies:
       - Qiime 1.8.0: https://github.com/qiime/qiime-deploy
-      - USEARCH: (only if using the usearch option) http://www.drive5.com/usearch/
+      - USEARCH: (only if using the usearch option) 
+        http://www.drive5.com/usearch/
 
     Resource utilization:
       - RAM: >1.5 G
@@ -265,12 +268,12 @@ def pick_otus_open_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
 @requires(binaries=['qiime_cmd'])
 def merge_otu_tables(files_list, name):
     """Workflow to merge OTU tables into a single OTU table. Also accepts
-    biom-formatted OTU tables.
+    biom-formatted OTU tables. This workflow will skip otu tables with
+    a file size of zero at runtime.
 
     :param files_list: List of strings; A list of file paths to the input 
                        OTU tables to be merged
     :param name: String; The file name of the merged OTU table
-    :param output_dir: String; The base directory of the merged OTU table
 
     External dependencies:
       - Qiime 1.8.0: https://github.com/qiime/qiime-deploy
@@ -312,7 +315,8 @@ def picrust(file, output_dir=None, verbose=True, **opts):
                      predict metagenomes
 
     External Dependencies:
-      - PICRUSt: Version 1.0.0, http://picrust.github.io/picrust/install.html#install
+      - PICRUSt: Version 1.0.0, 
+        http://picrust.github.io/picrust/install.html#install
 
     """
     norm_out = new_file(addtag(file, "normalized_otus"), basedir=output_dir)
