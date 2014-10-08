@@ -181,7 +181,8 @@ def maaslin(otu_table, metadata_file):
     # project specific read_config_file
     read_config_file = new_file_basename + "_maaslin.read.config"
     
-    # the directory of the final_targets[0] is where the output will be written    
+    # the directory of the final_targets[0] is where the output will
+    # be written
     final_targets = [new_file_basename + "_maaslin.txt", 
         new_file_basename + "_maaslin_log.txt"]
     
@@ -191,12 +192,14 @@ def maaslin(otu_table, metadata_file):
         yield biom_to_tsv(otu_table,otu_table_tsv_format)
         otu_table_maaslin_format=new_file_basename + "_format_maaslin.tsv"
         yield qiime_to_maaslin(otu_table_tsv_format, otu_table_maaslin_format)
-        yield merge_otu_metadata(otu_table_maaslin_format, metadata_file, initial_targets[0])
+        yield merge_otu_metadata(otu_table_maaslin_format,
+                                 metadata_file, initial_targets[0])
     else:
         yield merge_otu_metadata(otu_table, metadata_file,initial_targets[0])
     
     # create new project specific read.config file for maaslin input
-    yield create_maaslin_read_config(metadata_file, initial_targets[0], read_config_file)
+    yield create_maaslin_read_config(metadata_file,
+                                     initial_targets[0], read_config_file)
 
     # for command line need to transpose first
     yield transpose(initial_targets[0],initial_targets[1])
