@@ -1,10 +1,14 @@
 Pipelines
 #########
-.. contents:: 
-   :local:
-.. currentmodule:: anadama_workflows.pipelines
 
-.. automodule:: anadama_workflows.pipelines
-   :members:
-   :undoc-members:
-   :special-members:
+:Release: |version|
+:Date: |today|
+
+.. toctree::
+   :maxdepth: 2
+
+   pipelines.sixteen
+   pipelines.vis
+   pipelines.wgs
+
+

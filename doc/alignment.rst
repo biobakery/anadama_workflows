@@ -1,7 +1,6 @@
 Alignment Workflows
 ###################
 
-
 .. contents:: 
    :local:
 .. currentmodule:: anadama_workflows.alignment
