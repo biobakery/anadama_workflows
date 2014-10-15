@@ -10,7 +10,9 @@ from . import (
     starters
 )
 
-@requires(binaries=['gzip', 'bzip2'])
+@requires(binaries=['gzip', 'bzip2'],
+          version_methods=["gzip --version | head -1",
+                           "bzip2 --version < /dev/null 2>&1 | head -1"])
 def extract(fname_from, fname_to=None):
     """Workflow for converting an input file from their zipped to
     their unzipped equivalent.
@@ -45,7 +47,8 @@ def extract(fname_from, fname_to=None):
         return None
 
 
-@requires(binaries=['fastq_split'])
+@requires(binaries=['fastq_split'],
+          version_methods=["pip freeze | grep anadama_workflows"])
 def fastq_split(files_list, fasta_fname, qual_fname,
                 reverse_complement=False, trim=4, from_format=None):
     """ Workflow for concatenating and converting a list of sequence files
@@ -90,7 +93,8 @@ def fastq_split(files_list, fasta_fname, qual_fname,
     }
 
 
-@requires(binaries=['sequence_convert'])
+@requires(binaries=['sequence_convert'],
+          version_methods=["pip freeze | grep anadama_workflows"])
 def sequence_convert(files_list, output_file=None,
                      reverse_complement=False, from_format=None,
                      format_to="fastq", lenfilters_list=list()):

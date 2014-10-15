@@ -5,7 +5,9 @@ from anadama.action import CmdAction
 from anadama.decorators import requires
 from anadama.util import addtag, dict_to_cmd_opts
 
-@requires(binaries=["qiime_cmd"])
+@requires(binaries=["qiime_cmd"],
+          version_methods=["qiime_cmd print_qiime_config.py "
+                           "| awk '/QIIME library version/{print $NF;}'"])
 def stacked_bar_chart(biom_fname, output_dir, qiime_opts=dict()):
     """Workflow to produce stacked bar charts of biom-formatted taxonomic
     profiles using QIIME's `summarize_taxa_through_plots.py`.
@@ -51,7 +53,9 @@ def stacked_bar_chart(biom_fname, output_dir, qiime_opts=dict()):
     }
 
 
-@requires(binaries=["scriptPcoa.py"])
+@requires(binaries=["scriptPcoa.py"],
+          version_methods=["md5sum $(which scriptPcoa.py) "
+                           "| awk '{print $1;}'"])
 def breadcrumbs_pcoa_plot(pcl_fname, output_plot_fname, **opts):
     """Use breadcrumbs `scriptPcoa.py` script to produce principal
     coordinate plots of pcl files.

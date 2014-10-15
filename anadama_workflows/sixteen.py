@@ -61,7 +61,9 @@ def write_map(sample_group, sample_dir):
     }
 
 
-@requires(binaries=['qiime_cmd'])
+@requires(binaries=['qiime_cmd'],
+          version_methods=["qiime_cmd print_qiime_config.py "
+                           "| awk '/QIIME library version/{print $NF;}'"])
 def demultiplex(map_fname, fasta_fname, qual_fname, output_fname,
                 qiime_opts={}):
     """Workflow to demultiplex a barcoded set of 16S sequences from a
@@ -296,7 +298,9 @@ def merge_otu_tables(files_list, name):
     }
 
 
-@requires(binaries=['picrust_cmd', 'biom'])
+@requires(binaries=['picrust_cmd', 'biom'],
+          version_methods=["picrust_cmd print_picrust_config.py "
+                           "| awk '/PICRUSt version/{print $NF;}'"])
 def picrust(file, output_dir=None, verbose=True, **opts):
     """Workflow to predict metagenome functional content from 16S OTU tables.
 

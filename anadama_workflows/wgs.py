@@ -9,7 +9,9 @@ from . import (
     settings
 )
 
-@requires(binaries=['humann_init.py'])
+@requires(binaries=['humann_init.py'],
+          version_methods=["apt-cache show humann "
+                           "| awk '/Version: /{ print $NF; }'"])
 def humann(infiles_list, workdir):
     """Workflow to find pathway and gene lists from homology search and/or
     genome mapping results with HUMAnN.

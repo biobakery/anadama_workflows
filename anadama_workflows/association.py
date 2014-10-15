@@ -5,7 +5,9 @@ from anadama.decorators import requires
 from biom import biom_to_tsv
 
 
-@requires(binaries=['qiimeToMaaslin.py'])
+@requires(binaries=['qiimeToMaaslin.py'],
+          version_methods=["md5sum $(which qiimeToMaaslin.py) "
+                           "| awk '{print $1;}'"])
 def qiime_to_maaslin(in_datafile, outfile):
     """Converts a tsv file from qiime to a maaslin format
 
@@ -30,7 +32,9 @@ def qiime_to_maaslin(in_datafile, outfile):
     }
 
 
-@requires(binaries=['merge_metadata.py'])
+@requires(binaries=['merge_metadata.py'],
+          version_methods=["md5sum $(which merge_metadata.py) "
+                           "| awk '{print $1;}'"])
 def merge_otu_metadata(otu_table,metadata_file,outfile):
     """ Use the merge python script from maaslin to merge
         the otu_table and the metadata into a single file.
@@ -113,7 +117,9 @@ def create_maaslin_read_config(metadata_file, pcl_file, read_config_file):
     }
 
 
-@requires(binaries=['transpose.py'])
+@requires(binaries=['transpose.py'],
+          version_methods=["md5sum $(which merge_metadata.py) "
+                           "| awk '{print $1;}'"])
 def transpose(pcl_file, outfile):
     """ Transpose the merged pcl and metadata file
     
@@ -136,7 +142,9 @@ def transpose(pcl_file, outfile):
     }
 
 
-@requires(binaries=['Maaslin.R'])
+@requires(binaries=['Maaslin.R'],
+          version_methods=["md5sum $(which merge_metadata.py) "
+                           "| awk '{print $1;}'"])
 def run_maaslin(read_config_file, maaslin_outfile, pcl_file):
     """Run the maaslin software. You probably don't want to use this
     workflow on its own; the `maaslin` workflow encapsulates this

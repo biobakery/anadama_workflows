@@ -5,7 +5,8 @@ from . import (
     settings
 )
 
-@requires(binaries=["bowtie2"])
+@requires(binaries=["bowtie2"],
+          version_methods=["bowtie2 --version | head -1"])
 def bowtie2_align(infiles_list, output_file, **opts):
     """Workflow to use bowtie2 to map a list of input sequence files
     against a bowtie2 database. Additional keyword options are used

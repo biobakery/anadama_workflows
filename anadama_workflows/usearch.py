@@ -5,7 +5,9 @@ from anadama.action import CmdAction
 from anadama.decorators import requires
 
 
-@requires(binaries=['usearch7', 'sequence_pair'])
+@requires(binaries=['usearch7', 'sequence_pair'],
+          version_methods=["usearch7 -version"
+                           "pip freeze | grep anadama_workflows"])
 def usearch_stitch(input_fastq_pair, output_fastq, verbose=True, 
                    remove_tempfiles=True, **opts):
     """Workflow to stitch together paried reads using USEARCH version
@@ -97,7 +99,8 @@ def usearch_stitch(input_fastq_pair, output_fastq, verbose=True,
             "targets" : [output_fastq] }
 
 
-@requires(binaries=['usearch7'])
+@requires(binaries=['usearch7'],
+          version_methods=["usearch7 -version"])
 def usearch_filter(input_fastq, output_fasta, verbose=True, **opts):
     """Filter a fastq file, outputting sequences as fasta, using USEARCH
     version 7. The USEARCH binary should be named usearch7 in order

@@ -1,6 +1,7 @@
 from anadama.decorators import requires
 
-@requires(binaries=['biom'])
+@requires(binaries=['biom'],
+          version_methods=["pip freeze | grep biom-format"])
 def to_tsv(infile, outfile):
     """Convert a biom file to a tsv (also known as pcl) file using the
     biom package
@@ -27,7 +28,8 @@ def to_tsv(infile, outfile):
 biom_to_tsv = to_tsv
 
 
-@requires(binaries=['biom'])
+@requires(binaries=['biom'],
+          version_methods=["pip freeze | grep biom-format"])
 def add_metadata(infile, outfile, sample_metadata):
     """Add sample-level metadata to a biom file. Sample-level metadata
     should be in a format akin to
@@ -57,7 +59,8 @@ def add_metadata(infile, outfile, sample_metadata):
     }
 
 
-@requires(binaries=['biom'])
+@requires(binaries=['biom'],
+          version_methods=["pip freeze | grep biom-format"])
 def from_pcl(infile, outfile):
     """Convert a pcl file to biom format using the biom package
 
