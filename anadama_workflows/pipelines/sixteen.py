@@ -8,7 +8,7 @@ from anadama import util
 from anadama.pipelines import Pipeline
 
 from .. import settings
-from .. import general, sixteen
+from .. import general, sixteen, biom
 
 from . import SampleFilterMixin
 
@@ -165,6 +165,13 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin):
                 **self.options.get('pick_otus_closed_ref', dict())
             )
             self.otu_tables.append(join(otu_dir, "otu_table.biom"))
+
+        # convert biom file to tsv
+        for otu_table in self.otu_tables:
+            tsv_filename = otu_table+".tsv"
+            yield biom.biom_to_tsv(
+                otu_table, 
+                tsv_filename)
 
         # infer genes and pathways with picrust
         for otu_table in self.otu_tables:
