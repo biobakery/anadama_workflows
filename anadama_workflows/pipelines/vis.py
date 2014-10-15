@@ -1,0 +1,165 @@
+import os
+
+from anadama import util
+from anadama.pipelines import Pipeline
+
+from .. import settings
+from .. import sixteen, biom, association, visualization
+
+class VisualizationPipeline(Pipeline):
+    """Pipeline for visualizing taxonomic profiles.  This pipeline can be
+    run as is or it can be appended as an augmentation to existing
+    pipelines. See the `anadama.pipelines` module documentation for
+    help on using the `append` method.
+
+    Steps: 
+
+    * Merge all biom-formatted OTU-tables into a single biom table
+    * Add all sample-level metadata to the merged OTU table
+    * Convert all merged OTU-tables into pcl files
+    * Create stacked bar charts and taxa abundance summaries
+    * Create PCoA plots and charts
+
+    Workflows used:
+
+    * anadama_workflows.sixteen.merge_otu_tables
+    * anadama_workflows.biom.add_metadata
+    * anadama_workflows.visualization.stacked_bar_chart
+    * anadama_workflows.biom.to_tsv
+    * anadama_workflows.association.qiime_to_maaslin
+    * anadama_workflows.association.merge_otu_metadata
+    * anadama_workflows.visualization.breadcrumbs_pcoa_plot
+
+    """
+
+
+    name = "Visualization"
+
+    products = {
+        'sample_metadata'  : str(),
+        'otu_tables'       : list(),
+        'merged_otu_tables': list(),
+        'pcl_files'        : list()
+    }
+
+    def __init__(self, sample_metadata,
+                 otu_tables=list(),
+                 pcl_files=list(),
+                 merged_otu_tables=list(),
+                 workflow_options=dict(),
+                 products_dir=str(),
+                 *args, **kwargs):
+        """Initialize the pipeline.
+
+        :param sample_metadata: String or list of namedtuples; sample metadata 
+                                as deserialized by 
+                                ``anadama.util.deserialize_map_file``. If a 
+                                string is given, the string is treated as a path
+                                to the qiime-formatted map.txt for all samples. 
+                                For more information about sample-level 
+                                metadata, refer to the qiime documentation: 
+                                http://qiime.org/tutorials/tutorial.html#mapping-file-tab-delimited-txt
+        :keyword otu_tables: List of Strings; file paths to biom-formatted 
+                             OTU-tables to be visualized.
+        :keyword pcl_files: List of Strings; file paths to pcl-formatted 
+                            OTU-tables to be visualized.
+        :keyword merged_otu_tables: List of Strings; file paths to any already 
+                                    merged, already metadata-enriched, 
+                                    biom-formatted OTU tables
+        :keyword workflow_options: Dictionary; **opts to be fed into the 
+                                  respective workflow functions.
+        :keyword products_dir: String; Directory path for where outputs will 
+                               be saved.
+
+        """
+
+        super(VisualizationPipeline, self).__init__(*args, **kwargs)
+
+        self.options = {
+            'stacked_bar_chart': { }
+        }
+        self.options.update(workflow_options)
+        
+        self.add_products(sample_metadata   = sample_metadata,
+                          otu_tables        = otu_tables,
+                          merged_otu_tables = merged_otu_tables,
+                          pcl_files         = pcl_files)
+
+        if not products_dir:
+            products_dir = settings.workflows.product_directory
+        self.products_dir = os.path.realpath(products_dir)
+
+
+    @property
+    def _inferred_sample_metadata_fname(self):
+        if self.otu_tables:
+            base_input = self.otu_tables[0]
+        elif self.pcl_files:
+            base_input = self.pcl_files[0]
+        else:
+            raise ValueError("Unable to infer map.txt file location"
+                             " because pipeline inputs are empty")
+
+        dir_ = os.path.dirname(base_input)
+        return os.path.join(dir_, "map.txt")
+
+
+    def _get_or_create_sample_metadata(self):
+        if type(self.sample_metadata) is not str:
+            sample_metadata_fname = self._inferred_sample_metadata_fname
+            try:
+                util.serialize_map_file(self.sample_metadata, 
+                                        sample_metadata_fname)
+            except IndexError as e:
+                raise ValueError("The provided sample metadata is not in list"
+                                 " format, nor is it a string. Sample_metadata"
+                                 " should either be a string for a map.txt"
+                                 " filename or a list of namedtuples"
+                                 " representing the sample metadata")
+            return sample_metadata_fname
+        else:
+            if not os.path.exists(self.sample_metadata):
+                raise ValueError("The provided sample metadata file "
+                                 "does not exist: "+self.sample_metadata)
+            else:
+                return self.sample_metadata
+                
+
+    def _configure(self):
+
+        if self.otu_tables:
+            merged_name = util.addtag(self.otu_tables[0], "merged")
+            merged_file = util.new_file(merged_name, basedir=self.products_dir)
+            yield sixteen.merge_otu_tables(
+                self.otu_tables,
+                name=merged_file
+            )
+            meta_biom_name = util.addtag(merged_file, "meta")
+            yield biom.add_metadata(
+                merged_file, meta_biom_name, 
+                self._get_or_create_sample_metadata()
+            )
+            self.merged_otu_tables.append(meta_biom_name)
+
+        for otu_table in self.merged_otu_tables:
+            barchart_path = util.new_file(
+                otu_table+"_barcharts", basedir=self.products_dir)
+            yield visualization.stacked_bar_chart(otu_table, barchart_path)
+
+            tsv_filename = otu_table+".tsv"
+            yield association.biom_to_tsv(otu_table, tsv_filename)
+            nice_tsv_filename = util.addtag(tsv_filename, 'maaslin')
+            yield association.qiime_to_maaslin(tsv_filename, nice_tsv_filename)
+            pcl_filename = otu_table+".pcl"
+            yield association.merge_otu_metadata(
+                nice_tsv_filename, 
+                self._get_or_create_sample_metadata(),
+                pcl_filename
+            )
+            self.pcl_files.append(pcl_filename)
+
+        for pcl_file in self.pcl_files:
+            yield visualization.breadcrumbs_pcoa_plot(
+                pcl_file, pcl_file+"_pcoa_plot.png",
+                CoordinatesMatrix = pcl_file+"_pcoa_coords.txt"
+            )

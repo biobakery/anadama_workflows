@@ -61,7 +61,9 @@ def write_map(sample_group, sample_dir):
     }
 
 
-@requires(binaries=['qiime_cmd'])
+@requires(binaries=['qiime_cmd'],
+          version_methods=["qiime_cmd print_qiime_config.py "
+                           "| awk '/QIIME library version/{print $NF;}'"])
 def demultiplex(map_fname, fasta_fname, qual_fname, output_fname,
                 qiime_opts={}):
     """Workflow to demultiplex a barcoded set of 16S sequences from a
@@ -132,7 +134,8 @@ def pick_otus_closed_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
 
     External dependencies:
       - Qiime 1.8.0: https://github.com/qiime/qiime-deploy
-      - USEARCH: (only if using the usearch option) http://www.drive5.com/usearch/
+      - USEARCH: (only if using the usearch option) 
+        http://www.drive5.com/usearch/
 
     Resource utilization:
       - RAM: >1.5 G
@@ -184,6 +187,7 @@ def pick_otus_closed_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
         "file_dep": [input_fname]
     }
 
+
 @requires(binaries=['qiime_cmd', 'sequence_convert'])
 def pick_otus_open_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
     """Workflow to perform open-reference OTU picking. Similar to
@@ -210,7 +214,8 @@ def pick_otus_open_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
 
     External dependencies:
       - Qiime 1.8.0: https://github.com/qiime/qiime-deploy
-      - USEARCH: (only if using the usearch option) http://www.drive5.com/usearch/
+      - USEARCH: (only if using the usearch option) 
+        http://www.drive5.com/usearch/
 
     Resource utilization:
       - RAM: >1.5 G
@@ -265,12 +270,12 @@ def pick_otus_open_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
 @requires(binaries=['qiime_cmd'])
 def merge_otu_tables(files_list, name):
     """Workflow to merge OTU tables into a single OTU table. Also accepts
-    biom-formatted OTU tables.
+    biom-formatted OTU tables. This workflow will skip otu tables with
+    a file size of zero at runtime.
 
     :param files_list: List of strings; A list of file paths to the input 
                        OTU tables to be merged
     :param name: String; The file name of the merged OTU table
-    :param output_dir: String; The base directory of the merged OTU table
 
     External dependencies:
       - Qiime 1.8.0: https://github.com/qiime/qiime-deploy
@@ -293,7 +298,9 @@ def merge_otu_tables(files_list, name):
     }
 
 
-@requires(binaries=['picrust_cmd', 'biom'])
+@requires(binaries=['picrust_cmd', 'biom'],
+          version_methods=["picrust_cmd print_picrust_config.py "
+                           "| awk '/PICRUSt version/{print $NF;}'"])
 def picrust(file, output_dir=None, verbose=True, **opts):
     """Workflow to predict metagenome functional content from 16S OTU tables.
 
@@ -312,7 +319,8 @@ def picrust(file, output_dir=None, verbose=True, **opts):
                      predict metagenomes
 
     External Dependencies:
-      - PICRUSt: Version 1.0.0, http://picrust.github.io/picrust/install.html#install
+      - PICRUSt: Version 1.0.0, 
+        http://picrust.github.io/picrust/install.html#install
 
     """
     norm_out = new_file(addtag(file, "normalized_otus"), basedir=output_dir)

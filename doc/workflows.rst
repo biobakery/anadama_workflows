@@ -9,7 +9,10 @@ Workflows
 
    association
    alignment
+   biom
    general
    sixteen
+   usearch
+   visualization
    wgs
 

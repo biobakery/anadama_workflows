@@ -9,7 +9,9 @@ from . import (
     settings
 )
 
-@requires(binaries=['humann_init.py'])
+@requires(binaries=['humann_init.py'],
+          version_methods=["apt-cache show humann "
+                           "| awk '/Version: /{ print $NF; }'"])
 def humann(infiles_list, workdir):
     """Workflow to find pathway and gene lists from homology search and/or
     genome mapping results with HUMAnN.
@@ -53,7 +55,8 @@ def humann(infiles_list, workdir):
         ]
     }
         
-@requires(binaries=['metaphlan2.py'])
+@requires(binaries=['metaphlan2.py'], 
+          version_methods=['metaphlan2.py --version'])
 def metaphlan2(files_list, **opts):
     """Workflow to perform taxonomic profiling from whole metagenome
     shotgun sequences. Additional keyword options are used directly as

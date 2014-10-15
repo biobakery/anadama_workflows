@@ -1,31 +1,14 @@
-from .wgs import metaphlan2, humann
-from .alignment import bowtie2_align
-from .general import (
-    extract, 
-    fastq_split,
-    sequence_convert
-)
-from .sixteen import (
-    write_map, 
-    demultiplex, 
-    pick_otus_closed_ref, 
-    merge_otu_tables
-)
-from .association import (
-    maaslin,
-    biom_to_tsv,
-    qiime_to_maaslin,
-    merge_otu_metadata,
-    transpose
-)
+# Note: add all future modules to this file as an import to ensure
+# binary provenance tracking via the @requires decorator
 
-all = (
-    metaphlan2, humann,
-    bowtie2_align, 
-    extract, fastq_split, sequence_convert,
-    write_map, demultiplex, pick_otus_closed_ref, merge_otu_tables,
-    maaslin, biom_to_tsv, qiime_to_maaslin, merge_otu_metadata,
-    transpose
+from . import (
+    alignment,
+    association,
+    biom,
+    general,
+    sixteen,
+    usearch,
+    visualization,
+    wgs
 )
-
 
