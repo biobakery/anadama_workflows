@@ -1,4 +1,11 @@
 from anadama.decorators import requires
+from anadama.action import CmdAction
+import os
+from . import (
+    settings
+)
+
+
 
 @requires(binaries=['biom'])
 def to_tsv(infile, outfile):
@@ -12,14 +19,22 @@ def to_tsv(infile, outfile):
     - biom-format: http://biom-format.org/
     """
 
-    cmd="biom convert -i " + infile + " -o " + \
-        outfile + " -b --header-key taxonomy " + \
+    verbose = settings.workflows.verbose 
+
+    cmd="biom convert -i {infile} -o {outfile} " + \
+        " -b --header-key taxonomy " + \
         "--output-metadata-id \"Consensus Lineage\" " + \
         "--table-type 'otu table'"
 
+    def run():
+        if os.stat(infile).st_size > 1:
+            return CmdAction(cmd.format(infile=infile, outfile=outfile), verbose=verbose).execute()
+        else:
+            open(outfile, 'w').close()
+
     return {
         "name": "biom_to_tsv: " + infile,
-        "actions": [cmd],
+        "actions": [run],
         "file_dep": [infile],
         "targets": [outfile]
     }
