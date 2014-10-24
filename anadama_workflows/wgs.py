@@ -73,9 +73,9 @@ def metaphlan2(files_list, **opts):
 
     """
 
-    infiles_list  = files_list
-    def_outfile       = new_file(addext(files_list[0], "metaphlan2"))
-    def_bowtie2out    = new_file(addext(files_list[0], "bowtie2out.txt"))
+    infiles_list   = files_list
+    def_outfile    = new_file(addext(files_list[0], "metaphlan2"))
+    def_bowtie2out = new_file(addext(files_list[0], "bowtie2out.txt"))
 
     seqtype = guess_seq_filetype(infiles_list[0])
     if seqtype not in ('fasta', 'fastq'):
