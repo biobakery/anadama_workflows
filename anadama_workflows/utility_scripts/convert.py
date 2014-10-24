@@ -7,6 +7,12 @@ from pprint import pformat
 from functools import partial
 from itertools import ifilter
 
+try:
+    import bz2
+    import gzip
+except:
+    pass
+
 import pysam
 from Bio import SeqIO, Seq, SeqRecord
 
@@ -63,6 +69,18 @@ def parse_comparison(s):
     return lambda val: comparator(val, int_)
 
 
+def zipcheck():
+    ret = True
+    for zipmod in ("bz2", "gzip"):
+        if zipmod not in globals():
+            logging.warn("%s module not available; "
+                         "unable to handle %s encoded files"%(
+                             zipmod, zipmod))
+            ret = False
+
+    return ret
+
+
 def generate_filter(comparison_list):
     comparator_funcs = [ parse_comparison(str_) for str_ in comparison_list ]
     return lambda val: all( f(len(val)) for f in comparator_funcs )
@@ -71,6 +89,10 @@ def generate_filter(comparison_list):
 def my_open(f, *args, **kwargs):
     if f == '-':
         return sys.stdin
+    elif f.endswith(".bz2"):
+        return bz2.BZ2File(f, *args, **kwargs)
+    elif f.endswith("gzip") or f.endswith("gz"):
+        return gzip.GzipFile(f, *args, **kwargs)
     else:
         return open(f, *args, **kwargs)
 
@@ -151,6 +173,8 @@ def main():
     if not opts.to_format:
         parser.print_usage()
         sys.exit(1)
+
+    zipcheck()
 
     if not input_files:
         input_files = ['-']
