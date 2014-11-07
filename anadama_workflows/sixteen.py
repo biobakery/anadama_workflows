@@ -110,6 +110,33 @@ def demultiplex(map_fname, fasta_fname, qual_fname, output_fname,
     }
 
 
+@requires(binaries=['qiime_cmd'],
+          version_methods=["qiime_cmd print_qiime_config.py "
+                           "| awk '/QIIME library version/{print $NF;}'"])
+def demultiplex_illumina(fastq_fnames, barcode_fnames, map_fname, output_fname,
+                         qiime_opts={}):
+    output_dir=os.path.dirname(output_fname)
+    default_opts = {
+        "i": ",".join(fastq_fnames),
+        "b": ",".join(barcode_fnames),
+        "m": map_fname,
+        "o": output_dir
+    }
+    default_opts.update(qiime_opts)
+    opts = dict_to_cmd_opts(default_opts)
+    
+    cmd = ("qiime_cmd split_libraries_fastq.py"+
+           " "+opts)
+
+    return {
+        "name": "demultiplex_illumina:"+output_fname,
+        "actions": [cmd],
+        "file_dep": list(fastq_fnames) + list(barcode_fnames) + [map_fname],
+        "targets": [output_fname]
+    }
+
+
+
 @requires(binaries=['qiime_cmd', 'sequence_convert'])
 def pick_otus_closed_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
     """Workflow to perform OTU picking, generates a biom-formatted OTU

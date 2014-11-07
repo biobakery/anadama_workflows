@@ -1,5 +1,6 @@
 import os
-from os.path import join
+import re
+from os.path import join, basename
 from operator import itemgetter
 from collections import Counter
 from itertools import groupby
@@ -10,10 +11,10 @@ from anadama.pipelines import Pipeline
 from .. import settings
 from .. import general, sixteen, biom
 
-from . import SampleFilterMixin
+from . import SampleFilterMixin, SampleMetadataMixin, maybe_stitch
 
 
-class SixteenSPipeline(Pipeline, SampleFilterMixin):
+class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
     """Pipeline for analyzing 16S data.
 
@@ -43,6 +44,7 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin):
     products = {
         "sample_metadata"     : list(),
         "raw_seq_files"       : list(),
+        "barcode_seq_files"   : list(),
         "demuxed_fasta_files" : list(),
         "otu_tables"          : list()
     }
@@ -50,6 +52,7 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin):
     def __init__(self,
                  sample_metadata,
                  raw_seq_files=list(),
+                 barcode_seq_files=list(),
                  demuxed_fasta_files=list(), # assumed to be QC'd
                  otu_tables=list(),
                  products_dir=str(),
@@ -67,7 +70,9 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin):
                                 metadata, refer to the qiime documentation: 
                                 http://qiime.org/tutorials/tutorial.html#mapping-file-tab-delimited-txt
         :keyword raw_seq_files: List of strings; File paths to raw 16S sequence
-                                files. Supported sequence file formats are 
+                                files. ``raw_seq_files`` can be a list
+                                of pairs, if you want to stitch paired-end
+                                reads. Supported sequence file formats are 
                                 whatever biopython recognizes.
         :keyword demuxed_fasta_files: List of strings; File paths to 
                                       demultiplexed fasta files. Assumed to be
@@ -86,6 +91,7 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin):
 
         self.add_products(sample_metadata     = sample_metadata,
                           raw_seq_files       = raw_seq_files,
+                          barcode_seq_files   = barcode_seq_files,
                           demuxed_fasta_files = demuxed_fasta_files,
                           otu_tables          = otu_tables)
 
@@ -104,6 +110,7 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin):
                     'M': '2'    
                 }
             },
+            'demultiplex_illumina': { },
             'pick_otus_closed_ref': { },
             'picrust':              { },
         }
@@ -120,42 +127,23 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin):
             ]
             yield general.extract(compressed_files)
 
-        # split to fasta, qual, map.txt triplets and demultiplex
+        # possibly stitch paired reads, demultiplex, and quality filter
         if self.raw_seq_files:
-            firstitem = itemgetter(0)
-            self.sample_metadata = sorted(self.sample_metadata, key=firstitem)
-            for sample_id, sample_group in groupby(self.sample_metadata, 
-                                                   firstitem):
-                sample_dir = join(self.products_dir, sample_id)
-                sample_group = list(sample_group)
-                map_fname = util.new_file("map.txt", basedir=sample_dir)
-                yield sixteen.write_map(
-                    sample_group, sample_dir, 
-                    **self.options.get('write_map', dict())
-                )
+            self.raw_seq_files, maybe_tasks = maybe_stitch(self.raw_seq_files,
+                                                           self.products_dir)
+            for t in maybe_tasks:
+                yield t
 
-                files_list = self._filter_files_for_sample(
-                    self.raw_seq_files, sample_group)
-                fasta_fname = util.new_file(sample_id+".fa", 
-                                            basedir=sample_dir)
-                qual_fname = util.new_file(sample_id+".qual", 
-                                           basedir=sample_dir)
-                yield general.fastq_split(
-                    files_list, fasta_fname, qual_fname, 
-                    **self.options.get('fastq_split', dict())
-                )
-
-                qiime_opts = self.options['demultiplex'].pop('qiime_opts', {})
-                if 'barcode-type' not in qiime_opts:
-                    qiime_opts['barcode-type'] = self._determine_barcode_type(
-                        sample_group)
-                demuxed_fname = util.new_file("seqs.fna", basedir=sample_dir)
-                yield sixteen.demultiplex(
-                    map_fname, fasta_fname, qual_fname, demuxed_fname,
-                    qiime_opts=qiime_opts,
-                    **self.options.get('demultiplex', dict())
-                )
-                self.demuxed_fasta_files.append(demuxed_fname)
+            if self.barcode_seq_files:
+                # must be an illumina run, then
+                demuxed, tasks = self.split_illumina_style(
+                    self.raw_seq_files, self.barcode_seq_files)
+            else:
+                # no barcode files, assume 454 route
+                demuxed, tasks = self.split_454_style(self.raw_seq_files)
+            self.demuxed_fasta_files.extend(demuxed)
+            for t in tasks:
+                yield t
 
         # do closed reference otu picking
         for fasta_fname in self.demuxed_fasta_files:
@@ -179,6 +167,63 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin):
                 otu_table, 
                 **self.options.get('picrust', dict())
             )
+
+
+    def split_illumina_style(self, seqfiles_to_split, barcode_seqfiles):
+        demuxed, tasks = list(), list()
+        bcode_pairs = zip(sorted(seqfiles_to_split), sorted(barcode_seqfiles))
+        map_fname = self._get_or_create_sample_metadata()
+        for seqfile, bcode_file in bcode_pairs:
+            sample_dir = join(self.products_dir, basename(seqfile)+"_split")
+            outfile = util.new_file("seqs.fna", basedir=sample_dir) 
+            demuxed.append(outfile)
+            tasks.append( sixteen.demultiplex_illumina(
+                [seqfile], [bcode_file], map_fname, outfile,
+                qiime_opts=self.options.get("demultiplex_illumina",dict())
+            ) )
+
+        return demuxed, tasks
+            
+
+    def split_454_style(self, seqfiles_to_split):
+        tasks, demuxed = list(), list()
+        firstitem = itemgetter(0)
+        self.sample_metadata = sorted(self.sample_metadata, key=firstitem)
+        for sample_id, sample_group in groupby(self.sample_metadata, 
+                                               firstitem):
+            sample_dir = join(self.products_dir, sample_id)
+            sample_group = list(sample_group)
+            map_fname = util.new_file("map.txt", basedir=sample_dir)
+            tasks.append( sixteen.write_map(
+                sample_group, sample_dir, 
+                **self.options.get('write_map', dict())
+            ) )
+
+            files_list = self._filter_files_for_sample(
+                seqfiles_to_split, sample_group)
+            fasta_fname = util.new_file(sample_id+".fa", 
+                                        basedir=sample_dir)
+            qual_fname = util.new_file(sample_id+".qual", 
+                                       basedir=sample_dir)
+            tasks.append( general.fastq_split(
+                files_list, fasta_fname, qual_fname, 
+                **self.options.get('fastq_split', dict())
+            ) )
+
+            qiime_opts = self.options['demultiplex'].pop('qiime_opts', {})
+            if 'barcode-type' not in qiime_opts:
+                qiime_opts['barcode-type'] = self._determine_barcode_type(
+                    sample_group)
+            demuxed_fname = util.new_file("seqs.fna", basedir=sample_dir)
+            tasks.append( sixteen.demultiplex(
+                map_fname, fasta_fname, qual_fname, demuxed_fname,
+                qiime_opts=qiime_opts,
+                **self.options.get('demultiplex', dict())
+            ))
+            demuxed.append(demuxed_fname)
+
+        return demuxed, tasks
+
 
     @staticmethod
     def _determine_barcode_type(sample_group):

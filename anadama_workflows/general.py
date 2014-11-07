@@ -4,6 +4,7 @@ import os
 import mimetypes
 
 from anadama.util import addext, guess_seq_filetype, new_file
+from anadama.util import dict_to_cmd_opts
 from anadama.decorators import requires
 
 from . import ( 
@@ -142,6 +143,36 @@ def sequence_convert(files_list, output_file=None,
         "name": "sequence_convert_to_%s: %s..."%(format_to, files_list[0]),
         "actions": [cmd],
         "file_dep": files_list,
+        "targets": [output_file]
+    }
+
+
+@requires(binaries=['fastq-join'],
+          version_methods=["md5sum `which fastq-join` | awk '{print $1;}'"])
+def fastq_join(forward_fname, reverse_fname, output_file, options=dict()):
+
+    # TODO: implement a file rename to actually get what the user put
+    # in for ``output_file`` instead of ``output_file``join or worse
+    # if the user puts a '%' in the ``output_file``.
+
+    default_opts = {
+        "o": output_file
+    }
+    default_opts.update(options)
+    opts = dict_to_cmd_opts(default_opts)
+
+    cmd = "fastq-join "+opts+ " "+forward_fname+" "+reverse_fname
+
+    if '%' in output_file:
+        renamed_output = output_file.replace("%", "join")
+    else:
+        renamed_output = output_file+"join"
+    rename_cmd = "mv %s %s"%( renamed_output, output_file)
+
+    return {
+        "name": "fastq_join: %s..."%(output_file),
+        "actions": [cmd, rename_cmd],
+        "file_dep": [forward_fname, reverse_fname],
         "targets": [output_file]
     }
 

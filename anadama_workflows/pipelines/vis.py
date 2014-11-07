@@ -6,7 +6,9 @@ from anadama.pipelines import Pipeline
 from .. import settings
 from .. import sixteen, biom, association, visualization
 
-class VisualizationPipeline(Pipeline):
+from . import SampleMetadataMixin
+
+class VisualizationPipeline(Pipeline, SampleMetadataMixin):
     """Pipeline for visualizing taxonomic profiles.  This pipeline can be
     run as is or it can be appended as an augmentation to existing
     pipelines. See the `anadama.pipelines` module documentation for
@@ -88,41 +90,6 @@ class VisualizationPipeline(Pipeline):
         if not products_dir:
             products_dir = settings.workflows.product_directory
         self.products_dir = os.path.realpath(products_dir)
-
-
-    @property
-    def _inferred_sample_metadata_fname(self):
-        if self.otu_tables:
-            base_input = self.otu_tables[0]
-        elif self.pcl_files:
-            base_input = self.pcl_files[0]
-        else:
-            raise ValueError("Unable to infer map.txt file location"
-                             " because pipeline inputs are empty")
-
-        dir_ = os.path.dirname(base_input)
-        return os.path.join(dir_, "map.txt")
-
-
-    def _get_or_create_sample_metadata(self):
-        if type(self.sample_metadata) is not str:
-            sample_metadata_fname = self._inferred_sample_metadata_fname
-            try:
-                util.serialize_map_file(self.sample_metadata, 
-                                        sample_metadata_fname)
-            except IndexError as e:
-                raise ValueError("The provided sample metadata is not in list"
-                                 " format, nor is it a string. Sample_metadata"
-                                 " should either be a string for a map.txt"
-                                 " filename or a list of namedtuples"
-                                 " representing the sample metadata")
-            return sample_metadata_fname
-        else:
-            if not os.path.exists(self.sample_metadata):
-                raise ValueError("The provided sample metadata file "
-                                 "does not exist: "+self.sample_metadata)
-            else:
-                return self.sample_metadata
                 
 
     def _configure(self):

@@ -7,7 +7,7 @@ from anadama.pipelines import Pipeline
 from .. import settings
 from .. import general, wgs, alignment
 
-from . import SampleFilterMixin
+from . import SampleFilterMixin, maybe_stitch
 
 
 class WGSPipeline(Pipeline, SampleFilterMixin):
@@ -66,8 +66,8 @@ class WGSPipeline(Pipeline, SampleFilterMixin):
                                   first attribute of each sample.
         :keyword raw_seq_files: List of strings; File paths to raw WGS 
                                 sequence reads. raw_seq_files can be a list
-                                of lists, if you want to aggregate results by
-                                something other than by file
+                                of pairs, if you want to stitch paired-end
+                                reads.
         :keyword intermediate_fastq_files: List of strings; List of files to 
                                            be fed into metaphlan for taxonomic
                                            profiling and bowtie2 for alignment
@@ -87,9 +87,7 @@ class WGSPipeline(Pipeline, SampleFilterMixin):
         self.products_dir = os.path.realpath(products_dir)
 
         self.options = {
-            'sequence_convert': {
-                'lenfilters_list': [ '>=60' ]
-            }, 
+            'sequence_convert': { }, 
             'metaphlan2':       { },
             'bowtie2_align':    { },
             'humann':           { }
@@ -107,21 +105,22 @@ class WGSPipeline(Pipeline, SampleFilterMixin):
 
 
     def _configure(self):
-        # Convert all raw files into fastq files; run them through
-        # metaphlan2 to get community profiles
-        for files in self.raw_seq_files:
-            if type(files) is str:
-                files = [files]
-            fastq_file = util.new_file( basename(files[0])+"_merged.fastq",
+        self.raw_seq_files, maybe_tasks = maybe_stitch(self.raw_seq_files,
+                                                       self.products_dir)
+        for t in maybe_tasks:
+            yield t
+
+        for file_ in self.raw_seq_files:
+            fastq_file = util.new_file( basename(file_)+"_filtered.fastq",
                                         basedir=self.products_dir )
             yield general.sequence_convert(
-                files, fastq_file, 
+                [file_], fastq_file, 
                 **self.options.get('sequence_convert', dict())
             )
             self.intermediate_fastq_files.append(fastq_file)
 
             metaphlan_file = util.new_file( 
-                basename(files[0])+"_merged.metaphlan2.pcl",
+                basename(file_)+".metaphlan2.pcl",
                 basedir=self.products_dir )
             otu_table = metaphlan_file.replace('.pcl', '.biom')
             yield wgs.metaphlan2(
