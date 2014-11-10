@@ -116,11 +116,10 @@ def maybe_convert_to_fastq(fnames, products_dir):
     for f in fnames:
         guess = util.guess_seq_filetype(f)
         if guess != "fastq" or f.endswith(".bz2"):
-            new_fnames.append(
-                util.new_file(f+".fastq", basedir=products_dir)
-            )
+            fastq_file = util.new_file(f+".fastq", basedir=products_dir)
+            new_fnames.append(fastq_file)
             tasks.append(
-                general.sequence_convert([file_], fastq_file)
+                general.sequence_convert([f], fastq_file)
             )
         else:
             new_fnames.append(f)
