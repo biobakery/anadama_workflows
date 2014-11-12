@@ -35,7 +35,7 @@ def qiime_to_maaslin(in_datafile, outfile):
 @requires(binaries=['merge_metadata.py'],
           version_methods=["md5sum $(which merge_metadata.py) "
                            "| awk '{print $1;}'"])
-def merge_otu_metadata(otu_table,metadata_file,outfile):
+def merge_otu_metadata(otu_table, metadata_file, outfile, normalize=False):
     """ Use the merge python script from maaslin to merge
         the otu_table and the metadata into a single file.
         
@@ -51,8 +51,11 @@ def merge_otu_metadata(otu_table,metadata_file,outfile):
         
     """
 
-    cmd="merge_metadata.py " + metadata_file + " < " + \
-            otu_table + " > " + outfile
+    cmd="merge_metadata.py "
+    if not normalize:
+        cmd += " -n "
+
+    cmd += metadata_file + " < " + otu_table + " > " + outfile
 
     return {
         "name": "merge_otu_metadata: " + otu_table,
