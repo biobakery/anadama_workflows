@@ -50,7 +50,7 @@ class WGSPipeline(Pipeline, SampleFilterMixin):
     def __init__(self, sample_metadata,
                  raw_seq_files=list(), 
                  intermediate_fastq_files=list(),
-                 alignment_result_files=list(),
+                 decontaminated_fastq_files=list(),
                  products_dir=str(),
                  workflow_options=dict(),
                  *args, **kwargs):
@@ -71,9 +71,6 @@ class WGSPipeline(Pipeline, SampleFilterMixin):
         :keyword intermediate_fastq_files: List of strings; List of files to 
                                            be fed into metaphlan for taxonomic
                                            profiling and bowtie2 for alignment
-        :keyword alignment_result_files: List of strings; List of files to be
-                                         fed into HUMAnN for gene, pathway 
-                                         inference.
         :keyword products_dir: String; Directory path for where outputs will 
                                be saved.
         :keyword workflow_options: Dictionary; **opts to be fed into the 
@@ -88,6 +85,7 @@ class WGSPipeline(Pipeline, SampleFilterMixin):
 
         self.options = {
             'sequence_convert': { }, 
+            'decontaminate':    { }, 
             'metaphlan2':       { },
             'bowtie2_align':    { },
             'humann':           { }
@@ -95,12 +93,12 @@ class WGSPipeline(Pipeline, SampleFilterMixin):
         self.options.update(workflow_options)
 
         self.add_products(
-            sample_metadata          = sample_metadata,
-            raw_seq_files            = raw_seq_files,
-            intermediate_fastq_files = intermediate_fastq_files,
-            alignment_result_files   = alignment_result_files,
-            metaphlan_results        = list(),
-            otu_tables               = list()
+            sample_metadata            = sample_metadata,
+            raw_seq_files              = raw_seq_files,
+            intermediate_fastq_files   = intermediate_fastq_files,
+            decontaminated_fastq_files = decontaminated_fastq_files,
+            metaphlan_results          = list(),
+            otu_tables                 = list()
         )
 
 
@@ -119,12 +117,20 @@ class WGSPipeline(Pipeline, SampleFilterMixin):
             )
             self.intermediate_fastq_files.append(fastq_file)
 
+            name_base = os.path.join(self.products_dir,
+                                     basename(file_))
+            name_base = util.rmext(name_base)
+            task_dict = wgs.knead_data([fastq_file], name_base)
+            decontaminated_fastq = task_dict['targets'][0]
+            self.decontaminated_fastq_files.append(decontaminated_fastq)
+            yield task_dict
+
             metaphlan_file = util.new_file( 
                 basename(file_)+".metaphlan2.pcl",
                 basedir=self.products_dir )
             otu_table = metaphlan_file.replace('.pcl', '.biom')
             yield wgs.metaphlan2(
-                [fastq_file], output_file=metaphlan_file,
+                [decontaminated_fastq], output_file=metaphlan_file,
                 biom=otu_table,
                 # first index is for first item in list of samples
                 # second index is to get the sample id from the sample
@@ -135,23 +141,10 @@ class WGSPipeline(Pipeline, SampleFilterMixin):
             self.metaphlan_results.append(metaphlan_file)
             self.otu_tables.append(otu_table)
 
-        # Next align the fastq files against the kegg proks reduced db
-        for fastq_file in self.intermediate_fastq_files:
-            alignment_file = fastq_file+".sam"
-            self.alignment_result_files.append(alignment_file)
-            yield alignment.bowtie2_align(
-                [fastq_file], alignment_file,
-                **self.options.get('bowtie2_align', dict())
-            )
-
-        # Finally, HUMAnN all alignment files
-        for alignment_file in self.alignment_result_files:
-            # create a directory for the humann environment
-            # util.new_file does that for us
-            new_basedir = alignment_file+"_humann"
-            scons_fname = util.new_file('SConstruct', basedir=new_basedir)
-            yield wgs.humann(
-                [alignment_file], workdir=new_basedir,
+            # Finally, HUMAnN all alignment files
+            humann_output_dir = fastq_file+"_humann"
+            yield wgs.humann2(
+                decontaminated_fastq, humann_output_dir, 
                 **self.options.get('humann', dict())
             )
-
+            
