@@ -139,3 +139,43 @@ def metaphlan2(files_list, **opts):
                 actions  = [cmd],
                 file_dep = infiles_list,
                 targets  = targets )
+
+
+def knead_data(infiles, output_basestr, **opts):
+    """infiles should be either a one-length or two-length
+    iterable. Two-length iterables are treated as paired-end data.
+
+    """
+    
+    default_opts = {
+        "output-prefix": output_basestr,
+        "reference-db": settings.workflows.knead.reference_db,
+    }
+    default_opts.update(opts)
+    
+    db_base = os.path.basename(settings.workflows.knead.reference_db)
+    def _targ(num_tag=None):
+        if num_tag:
+            base = "_".join([output_basestr, db_base, "clean", num_tag])
+        else:
+            base = "_".join([output_basestr, db_base, "clean"])
+        return base+".fastq"
+
+    infiles_list = list(infiles)
+    if len(infiles_list) > 1:
+        one, two = infiles_list
+        default_opts['1'] = one
+        default_opts['2'] = two
+        targets = [ _targ("1"), _targ("2") ]
+    else:
+        default_opts['1'] = infiles_list[0]
+        targets = [ _targ() ]
+
+    cmd = "knead_data.py " + dict_to_cmd_opts(default_opts)
+
+    return {
+        "name": "knead_data:"+output_basestr,
+        "targets": targets,
+        "file_dep": infiles_list,
+        "actions": [cmd]
+    }
