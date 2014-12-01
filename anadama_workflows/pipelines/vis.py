@@ -16,21 +16,21 @@ class VisualizationPipeline(Pipeline, SampleMetadataMixin):
 
     Steps: 
 
-    * Merge all biom-formatted OTU-tables into a single biom table
-    * Add all sample-level metadata to the merged OTU table
-    * Convert all merged OTU-tables into pcl files
-    * Create stacked bar charts and taxa abundance summaries
-    * Create PCoA plots and charts
+      * Merge all biom-formatted OTU-tables into a single biom table
+      * Add all sample-level metadata to the merged OTU table
+      * Convert all merged OTU-tables into pcl files
+      * Create stacked bar charts and taxa abundance summaries
+      * Create PCoA plots and charts
 
     Workflows used:
 
-    * anadama_workflows.sixteen.merge_otu_tables
-    * anadama_workflows.biom.add_metadata
-    * anadama_workflows.visualization.stacked_bar_chart
-    * anadama_workflows.biom.to_tsv
-    * anadama_workflows.association.qiime_to_maaslin
-    * anadama_workflows.association.merge_otu_metadata
-    * anadama_workflows.visualization.breadcrumbs_pcoa_plot
+      * anadama_workflows.sixteen.merge_otu_tables
+      * anadama_workflows.biom.add_metadata
+      * anadama_workflows.visualization.stacked_bar_chart
+      * anadama_workflows.biom.to_tsv
+      * anadama_workflows.association.qiime_to_maaslin
+      * anadama_workflows.association.merge_otu_metadata
+      * anadama_workflows.visualization.breadcrumbs_pcoa_plot
 
     """
 

@@ -13,21 +13,21 @@ from . import (
           version_methods=["apt-cache show humann "
                            "| awk '/Version: /{ print $NF; }'"])
 def humann(infiles_list, workdir):
-    """Workflow to find pathway and gene lists from homology search and/or
-    genome mapping results with HUMAnN.
+    """Workflow to find pathway and gene lists from homology search
+    and/or genome mapping results with HUMAnN.
 
     :param infiles_list: List of strings; Paths to files to be fed
-                         into HUMAnN.
-    :param workdir: String; Directory path to where a HUMAnN environment 
-                    will be created. Input files are softlinked into this 
-                    directory's 'input' subdirectory. All products can be
-                    found in the ``workdir``'s 'output' subdirectory.
+                         into HUMAnN.  :param workdir: String;
+                         Directory path to where a HUMAnN environment
+                         will be created. Input files are softlinked
+                         into this directory's 'input'
+                         subdirectory. All products can be found in
+                         the ``workdir``'s 'output' subdirectory.
 
-    External dependencies
-      - HUMAnN 0.99b: https://bitbucket.org/biobakery/humann
+    External dependencies - HUMAnN 0.99b:
+    https://bitbucket.org/biobakery/humann
 
-    Resource utilization:
-      - Ram: 18-32G
+    Resource utilization: - Ram: 18-32G
 
     """
     _join = lambda f, label: os.path.join(workdir, "output", f+label)
@@ -59,6 +59,31 @@ def humann(infiles_list, workdir):
 @requires(binaries=['humann2.py'],
           version_methods=['pip freeze | grep humann2lib'])
 def humann2(seqfile_in, output_dir, **opts):
+    """Workflow to find pathway and gene lists grouped by organism from
+    raw whole genome shotgun reads.
+
+    Additional keywords are interpreted as command line options to be
+    passed to the wrapped knead_data.py script.  No - or -- flags are
+    necessary; the correct - or --t flags are inferred based on the
+    length of the option.  For boolean options, use the key/value
+    pattern of { "my-option": "" }.
+
+    :param seqfile_in: String; Paths to file to be fed into HUMAnN2.
+
+    :param output_dir: String; Directory path to where a HUMAnN2
+      deposits its results.
+
+    External dependencies:
+
+      - `HUMAnN2 <https://bitbucket.org/biobakery/humann2>`_
+
+
+    Resource utilization: 
+
+      - Ram: 4-6G
+      - Time: 50 hrs (fifty)
+
+    """
 
     default_opts = {
         "input"  : seqfile_in,
@@ -141,9 +166,35 @@ def metaphlan2(files_list, **opts):
                 targets  = targets )
 
 
+@requires(binaries=['knead_data.py', 'bowtie2'],           
+          version_methods=["pip freeze | grep knead_datalib",
+                           "bowtie2 --version  |head"])
 def knead_data(infiles, output_basestr, **opts):
-    """infiles should be either a one-length or two-length
-    iterable. Two-length iterables are treated as paired-end data.
+    """Workflow to sanitize host data and otherwise quality filter
+    metagenomic reads. Input sequences are mapped against a host
+    database using bowtie2; any sequences that map back to the host
+    database are discarded.
+
+    Additional keywords are interpreted as command line options to be
+    passed to the wrapped knead_data.py script.  No - or -- flags are
+    necessary; the correct - or --t flags are inferred based on the
+    length of the option.  For boolean options, use the key/value
+    pattern of { "my-option": "" }.
+
+    :param infiles: Iterable of strings; File path to the input
+      sequences. Should be either a one-length or two-length
+      iterable. Two-length iterables are treated as paired-end data.
+
+    :param output_basestr: String; Path to the directory and base
+      filename where the output cleaned sequences will be saved.
+
+    
+    External dependencies:
+      - `knead_data.py <https://bitbucket.org/biobakery/kneaddata>`_
+      - `bowtie2 <http://bowtie-bio.sourceforge.net/index.shtml>`_
+
+    Resource utilization:
+      - RAM: 3 G
 
     """
     

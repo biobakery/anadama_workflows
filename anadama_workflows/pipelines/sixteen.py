@@ -20,24 +20,24 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
     Steps:
 
-    * Decompress any compressed sequences
-    * Aggregate samples by SampleID.
-    * For each sample:
+      * Decompress any compressed sequences
+      * Aggregate samples by SampleID.
+      * For each sample:
     
-      - Write map.txt entries for that SampleID to its own map.txt file
-      - Convert all sequence files for that SampleID into fasta and qual
-      - Demultiplex and quality filter
-      - Perform closed reference OTU picking against greengenes
-      - Infer genes, pathways with picrust
+        * Write map.txt entries for that SampleID to its own map.txt file
+        * Convert all sequence files for that SampleID into fasta and qual
+        * Demultiplex and quality filter
+        * Perform closed reference OTU picking against greengenes
+        * Infer genes, pathways with picrust
 
     Workflows used:
 
-    * anadama_workflows.general.extract
-    * anadama_workflows.sixteen.write_map
-    * anadama_workflows.general.fastq_split
-    * anadama_workflows.sixteen.demultiplex
-    * anadama_workflows.sixteen.pick_otus_closed_ref
-    * anadama_workflows.sixteen.picrust
+      * anadama_workflows.general.extract
+      * anadama_workflows.sixteen.write_map
+      * anadama_workflows.general.fastq_split
+      * anadama_workflows.sixteen.demultiplex
+      * anadama_workflows.sixteen.pick_otus_closed_ref
+      * anadama_workflows.sixteen.picrust
     """
 
     name = "16S"
@@ -147,7 +147,8 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
         # do closed reference otu picking
         for fasta_fname in self.demuxed_fasta_files:
-            otu_dir = join(os.path.dirname(fasta_fname), "otus")
+            dirname = util.rmext(os.path.basename(fasta_fname))
+            otu_dir = join(os.path.dirname(fasta_fname), dirname+"_otus")
             yield sixteen.pick_otus_closed_ref(
                 input_fname=fasta_fname, output_dir=otu_dir,
                 **self.options.get('pick_otus_closed_ref', dict())
