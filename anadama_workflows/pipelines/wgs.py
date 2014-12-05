@@ -120,7 +120,7 @@ class WGSPipeline(Pipeline, SampleFilterMixin):
             name_base = os.path.join(self.products_dir,
                                      basename(file_))
             name_base = util.rmext(name_base)
-            task_dict = wgs.knead_data([fastq_file], name_base)
+            task_dict = wgs.knead_data([fastq_file], name_base).next()
             decontaminated_fastq = task_dict['targets'][0]
             self.decontaminated_fastq_files.append(decontaminated_fastq)
             yield task_dict
