@@ -3,16 +3,16 @@ class workflows:
     verbose           = True
 
     class metaphlan2:
-        bowtie2db = "/vagrant/scripts/metaphlan2/db_v20/mpa_v20_m200"
-        mpa_pkl   = "/vagrant/scripts/metaphlan2/db_v20/mpa_v20_m200.pkl"
+        bowtie2db = "/net/hutlab11/srv/export/hutlab11/share_root/databases/metaphlan2/db_v20/mpa_v20_m200"
+        mpa_pkl   = "/net/hutlab11/srv/export/hutlab11/share_root/databases/metaphlan2/db_v20/mpa_v20_m200.pkl"
     class sixteen:
-        otu_taxonomy = "/vagrant/data/ccfa/gg_13_5_otus/taxonomy/97_otu_taxonomy.txt"
-        otu_refseq   = "/vagrant/data/ccfa/gg_13_5_otus/rep_set/97_otus.fasta"
+        otu_taxonomy = "/net/hutlab11/srv/export/hutlab11/share_root/databases/ccfa/gg_13_5_otus/taxonomy/97_otu_taxonomy.txt"
+        otu_refseq   = "/net/hutlab11/srv/export/hutlab11/share_root/databases/ccfa/gg_13_5_otus/rep_set/97_otus.fasta"
     class alignment:
-        kegg_bowtie2_db = "/vagrant/data/ccfa/KEGG_reduced_bowtie2/KEGG_1"
+        kegg_bowtie2_db = "/net/hutlab11/srv/export/hutlab11/share_root/databases/ccfa/KEGG_reduced_bowtie2/KEGG_1"
                                              
     class humann2:
-        install_dir = "/vagrant/scripts/humann2/databases"
+        install_dir = "/net/hutlab11/srv/export/hutlab11/share_root/databases/humann2/databases"
         uniref_path = install_dir+"/uniref/"
         chocophlan_path = install_dir+"/chocophlan/"
         _pathway_dir = install_dir+"/pathways"
@@ -20,4 +20,4 @@ class workflows:
                               _pathway_dir+"/metacyc_pathways")
 
     class knead:
-        reference_db = "/vagrant/scripts/kneaddata/databases/bowtie2/humanGRCh38"
+        reference_db = "/net/hutlab11/srv/export/hutlab11/share_root/databases/bowtie2/humanGRCh38"
