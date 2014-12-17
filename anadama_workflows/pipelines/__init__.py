@@ -90,6 +90,30 @@ def maybe_stitch(maybe_pairs, products_dir):
 
         return singles, tasks
 
+def maybe_decompress(raw_seq_files):
+    # ensure all files are decompressed
+    compressed_files = []
+    # raw_seq_files might be a list of tuples - thus handle differently
+    if isinstance(raw_seq_files[0], tuple):
+        idxs = list(util.which_compressed_idxs(raw_seq_files))
+        compressed_files = util.take(raw_seq_files, idxs)
+    else:
+        idxs, compressed_files = zip(*util.filter_compressed(raw_seq_files))
+    
+    comp_raw_seq_files = []
+
+    for idx in idxs:
+        if isinstance(idx, tuple):
+            raw_seq_files[idx[0]] = list(raw_seq_files[idx[0]])
+            comp_raw_seq_file = raw_seq_files[idx[0]][idx[1]]
+            comp_raw_seq_files.append(comp_raw_seq_file)
+            raw_seq_files[idx[0]][idx[1]] = os.path.splitext(comp_raw_seq_file)[0]
+        else:
+            comp_raw_seq_file = raw_seq_files[idx]
+            comp_raw_seq_files.append(comp_raw_seq_file)
+            raw_seq_files[idx] = os.path.splitext(comp_raw_seq_file)[0]
+
+    return raw_seq_files, comp_raw_seq_files
 
 def _to_merged(fname_str):
     fname_str = re.sub(r'(.*)[rR]1(.*)', r'\1merged\2', fname_str)
