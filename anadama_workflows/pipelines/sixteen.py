@@ -21,6 +21,7 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
     Steps:
 
       * Decompress any compressed sequences
+      * Paired end reads are stitched.
       * Aggregate samples by SampleID.
       * For each sample:
     
@@ -32,12 +33,14 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
     Workflows used:
 
-      * anadama_workflows.general.extract
-      * anadama_workflows.sixteen.write_map
-      * anadama_workflows.general.fastq_split
-      * anadama_workflows.sixteen.demultiplex
-      * anadama_workflows.sixteen.pick_otus_closed_ref
-      * anadama_workflows.sixteen.picrust
+      * :py:func:`anadama_workflows.general.extract`
+      * :py:func:`anadama_workflows.general.sequence_convert`
+      * :py:func:`anadama_workflows.general.fastq_join`
+      * :py:func:`anadama_workflows.sixteen.write_map`
+      * :py:func:`anadama_workflows.general.fastq_split`
+      * :py:func:`anadama_workflows.sixteen.demultiplex`
+      * :py:func:`anadama_workflows.sixteen.pick_otus_closed_ref`
+      * :py:func:`anadama_workflows.sixteen.picrust`
     """
 
     name = "16S"

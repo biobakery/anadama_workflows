@@ -20,7 +20,7 @@ class WGSPipeline(Pipeline, SampleFilterMixin):
 
     * For each sequence set:
 
-      - Convert the sequences and concatenate into a single fastq file
+      - Convert, join paired end reads, and concatenate into a single fastq file
       - Filter sequences for length > 60 bases
       - Perform taxonomic profiling with metaphlan2
       - Align the fastq file agains the KEGG proks reduced dataset with
@@ -30,10 +30,10 @@ class WGSPipeline(Pipeline, SampleFilterMixin):
 
     Workflows used:
 
-    * anadama_workflows.general.sequence_convert
-    * anadama_workflows.wgs.metaphlan2
-    * anadama_workflows.alignment.bowtie2
-    * anadama_workflows.wgs.humann
+    * :py:func:`anadama_workflows.general.sequence_convert`
+    * :py:func:`anadama_workflows.general.fastq_join`
+    * :py:func:`anadama_workflows.wgs.metaphlan2`
+    * :py:func:`anadama_workflows.wgs.humann2`
 
     """
 
