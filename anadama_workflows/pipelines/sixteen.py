@@ -11,7 +11,7 @@ from anadama.pipelines import Pipeline
 from .. import settings
 from .. import general, sixteen, biom
 
-from . import SampleFilterMixin, SampleMetadataMixin, maybe_stitch
+from . import SampleFilterMixin, SampleMetadataMixin, maybe_stitch, maybe_decompress
 
 
 class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
@@ -121,8 +121,10 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
         # ensure all files are decompressed
         self.raw_seq_files, compressed_files = maybe_decompress(
                 self.raw_seq_files)
-        if compressed_files:
-            yield general.extract(compressed_files)
+        self.barcode_seq_files, compressed_files2 = maybe_decompress(
+                self.barcode_seq_files)
+        for compressed_file in compressed_files + compressed_files2:
+            yield general.extract(compressed_file)
 
         # possibly stitch paired reads, demultiplex, and quality filter
         if self.raw_seq_files:

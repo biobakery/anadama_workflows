@@ -103,12 +103,17 @@ def maybe_decompress(raw_seq_files):
     comp_raw_seq_files = []
 
     for idx in idxs:
-        comp_raw_seq_file = raw_seq_files[idx]
-        comp_raw_seq_files.append(comp_raw_seq_file)
-        raw_seq_files[idx] = os.path.splitext(comp_raw_seq_file)[0]
+        if isinstance(idx, tuple):
+            raw_seq_files[idx[0]] = list(raw_seq_files[idx[0]])
+            comp_raw_seq_file = raw_seq_files[idx[0]][idx[1]]
+            comp_raw_seq_files.append(comp_raw_seq_file)
+            raw_seq_files[idx[0]][idx[1]] = os.path.splitext(comp_raw_seq_file)[0]
+        else:
+            comp_raw_seq_file = raw_seq_files[idx]
+            comp_raw_seq_files.append(comp_raw_seq_file)
+            raw_seq_files[idx] = os.path.splitext(comp_raw_seq_file)[0]
 
     return raw_seq_files, comp_raw_seq_files
-
 
 def _to_merged(fname_str):
     fname_str = re.sub(r'(.*)[rR]1(.*)', r'\1merged\2', fname_str)
