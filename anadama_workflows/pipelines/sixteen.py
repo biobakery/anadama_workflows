@@ -119,12 +119,9 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
     def _configure(self):
         # ensure all files are decompressed
-        compressed_files = util.filter_compressed(self.raw_seq_files)
+        self.raw_seq_files, compressed_files = maybe_decompress(
+                self.raw_seq_files)
         if compressed_files:
-            self.raw_seq_files = [
-                os.path.splitext(f)[0] if util.is_compressed(f) else f
-                for f in self.raw_seq_files
-            ]
             yield general.extract(compressed_files)
 
         # possibly stitch paired reads, demultiplex, and quality filter
