@@ -18,6 +18,7 @@ def qiime_to_maaslin(in_datafile, outfile):
 
     External dependencies
       - QiimeToMaaslin: https://bitbucket.org/biobakery/qiimetomaaslin
+      
 
     """
 

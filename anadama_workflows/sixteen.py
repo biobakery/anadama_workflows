@@ -12,6 +12,7 @@ from anadama import strategies
 
 from anadama.util import (
     addext, 
+    rmext,
     addtag,
     new_file,
     dict_to_cmd_opts, 
@@ -171,7 +172,8 @@ def pick_otus_closed_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
 
     output_fname = new_file("otu_table.biom", basedir=output_dir)
     revcomp_fname = new_file(
-        "revcomp.fna", basedir=os.path.dirname(input_fname))
+        os.path.basename(rmext(input_fname))+"_revcomp.fna",
+        basedir=os.path.dirname(input_fname))
 
     verbose = settings.workflows.verbose if verbose is None else verbose
 
