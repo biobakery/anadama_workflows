@@ -89,13 +89,12 @@ def humann2(seqfile_in, output_dir, **opts):
         "input"  : seqfile_in,
         "output" : os.path.realpath(output_dir),
         
-        "metaphlan_bowtie2db": settings.workflows.metaphlan2.bowtie2db,
-        "metaphlan_pkl"      : settings.workflows.metaphlan2.mpa_pkl,
         "uniref"             : settings.workflows.humann2.uniref_path,
         "chocophlan"         : settings.workflows.humann2.chocophlan_path,
         "pathways_databases" : settings.workflows.humann2.pathways_databases,
         "o_log"              : os.path.join(output_dir, "humann2_log.txt"),
-        "output_format"      : "tsv"
+        "output_format"      : "tsv",
+        "bypass_translated_search" : ""
     }
     default_opts.update(opts)
     opts_str = dict_to_cmd_opts(default_opts, sep=" ")
