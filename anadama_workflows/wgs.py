@@ -102,8 +102,10 @@ def humann2(seqfile_in, output_dir, **opts):
     cmd = "humann2.py " + opts_str
 
     suffix = default_opts['output_format']
-    _join = lambda s: new_file(os.path.basename(seqfile_in) + s,
+    humann2_seqfile_in = os.path.basename(seqfile_in).split('.')[0]
+    _join = lambda s: new_file(os.path.basename(humann2_seqfile_in) + s,
                                basedir=default_opts['output'] )
+    import sys; print >> sys.stderr, "newfile: " + os.path.basename(seqfile_in) + ":" + "_genefamiles." + suffix
     targets = map(_join, ("_genefamilies."+suffix, 
                           "_pathcoverage."+suffix, 
                           "_pathabundance."+suffix))
