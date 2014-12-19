@@ -11,7 +11,12 @@ from anadama.pipelines import Pipeline
 from .. import settings
 from .. import general, sixteen, biom
 
-from . import SampleFilterMixin, SampleMetadataMixin, maybe_stitch, maybe_decompress
+from . import (
+    SampleFilterMixin, 
+    SampleMetadataMixin, 
+    maybe_stitch, 
+    maybe_decompress
+)
 
 
 class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
@@ -99,7 +104,10 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
                           otu_tables          = otu_tables)
 
         if type(sample_metadata) is str:
-            self.sample_metadata = util.deserialize_map_file(samples)
+            with open(sample_metadata) as metadata_f:
+                self.sample_metadata = list(
+                    util.deserialize_map_file(metadata_f)
+                )
 
         if not products_dir:
             products_dir = settings.workflows.product_directory
@@ -122,15 +130,15 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
     def _configure(self):
         # ensure all files are decompressed
-        self.raw_seq_files, compressed_files = maybe_decompress(
-                self.raw_seq_files)
-        self.barcode_seq_files, compressed_files2 = maybe_decompress(
-                self.barcode_seq_files)
-        for compressed_file in compressed_files + compressed_files2:
-            yield general.extract(compressed_file)
-
         # possibly stitch paired reads, demultiplex, and quality filter
         if self.raw_seq_files:
+            self.raw_seq_files, compressed = maybe_decompress(
+                self.raw_seq_files)
+            self.barcode_seq_files, compressed2 = maybe_decompress(
+                self.barcode_seq_files)
+            for compressed_file in compressed + compressed2:
+                yield general.extract(compressed_file)
+                
             self.raw_seq_files, maybe_tasks = maybe_stitch(self.raw_seq_files,
                                                            self.products_dir)
             for t in maybe_tasks:
@@ -176,13 +184,18 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
         demuxed, tasks = list(), list()
         bcode_pairs = zip(sorted(seqfiles_to_split), sorted(barcode_seqfiles))
         map_fname = self._get_or_create_sample_metadata()
+        options = self.options.get("demultiplex_illumina", dict())
+        if 'barcode_type' not in options:
+            options['barcode_type'] = self._determine_barcode_type(
+                self.sample_metadata)
+
         for seqfile, bcode_file in bcode_pairs:
             sample_dir = join(self.products_dir, basename(seqfile)+"_split")
             outfile = util.new_file("seqs.fna", basedir=sample_dir) 
             demuxed.append(outfile)
             tasks.append( sixteen.demultiplex_illumina(
                 [seqfile], [bcode_file], map_fname, outfile,
-                qiime_opts=self.options.get("demultiplex_illumina",dict())
+                qiime_opts=options
             ) )
 
         return demuxed, tasks
@@ -229,14 +242,15 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
 
     @staticmethod
-    def _determine_barcode_type(sample_group):
+    def _determine_barcode_type(sample_group, use_most_common=False):
         lengths = ( len(s.BarcodeSequence) for s in sample_group )
         length_histogram = Counter(lengths)
 
-        if len(length_histogram) > 1:
-            return "variable_length"
-        else:
+        if len(length_histogram) == 1 or use_most_common:
             bcode_len = length_histogram.most_common(1)[0][0]
             return str(bcode_len)
+        else:
+            return "variable_length"
+
 
 
