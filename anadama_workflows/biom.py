@@ -35,7 +35,7 @@ def to_tsv(infile, outfile):
             open(outfile, 'w').close()
 
     return {
-        "name": "biom_to_tsv: " + infile,
+        "name": "biom_to_tsv: " + outfile,
         "actions": [run],
         "file_dep": [infile],
         "targets": [outfile]
