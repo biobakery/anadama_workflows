@@ -139,8 +139,12 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
             for compressed_file in compressed + compressed2:
                 yield general.extract(compressed_file)
                 
-            self.raw_seq_files, maybe_tasks = maybe_stitch(self.raw_seq_files,
-                                                           self.products_dir)
+            packed = maybe_stitch(
+                self.raw_seq_files,
+                self.products_dir,
+                barcode_files=self.barcode_seq_files
+            )
+            self.raw_seq_files, self.barcode_seq_files, maybe_tasks = packed
             for t in maybe_tasks:
                 yield t
 

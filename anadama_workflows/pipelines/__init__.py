@@ -1,6 +1,6 @@
 import re
 import os
-from itertools import dropwhile, chain
+from itertools import dropwhile, chain, izip_longest
 from anadama import util
 
 from .. import general
@@ -74,21 +74,34 @@ class SampleMetadataMixin(object):
 
 
 
-def maybe_stitch(maybe_pairs, products_dir):
-        pairs, singles = split_pairs(maybe_pairs)
-        tasks = list()
-        for pair in pairs:
-            (forward, reverse), maybe_tasks = maybe_convert_to_fastq(
-                pair, products_dir)
-            tasks.extend(maybe_tasks)
-            output = util.new_file( 
-                _to_merged(forward),
-                basedir=products_dir 
+def maybe_stitch(maybe_pairs, products_dir, barcode_files=list()):
+    pairs, singles = split_pairs(maybe_pairs)
+    tasks = list()
+    barcodes = list()
+    for pair, maybe_barcode in izip_longest(pairs, barcode_files):
+        (forward, reverse), maybe_tasks = maybe_convert_to_fastq(
+            pair, products_dir)
+        tasks.extend(maybe_tasks)
+        output = util.new_file( 
+            _to_merged(forward),
+            basedir=products_dir 
+        )
+        singles.append(output)
+        tasks.append( general.fastq_join(forward, reverse, output) )
+        if maybe_barcode:
+            filtered_barcode = util.new_file(
+                addtag(maybe_barcode, "filtered"),
+                basedir=products_dir
             )
-            singles.append(output)
-            tasks.append( general.fastq_join(forward, reverse, output) )
+            pairtask = general.sequence_pair(
+                maybe_barcode, output,
+                outfname1=filtered_barcode,
+                options={"inner_join": "right"}
+            )
+            barcodes.append(filtered_barcode)
+            tasks.append(pairtask)
 
-        return singles, tasks
+    return singles, barcodes, tasks
 
 def maybe_decompress(raw_seq_files):
     if isinstance(raw_seq_files[0], tuple):

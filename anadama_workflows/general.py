@@ -176,3 +176,34 @@ def fastq_join(forward_fname, reverse_fname, output_file, options=dict()):
         "targets": [output_file]
     }
 
+
+def sequence_pair(seqfname1, seqfname2, 
+                  outfname1="/dev/null", outfname2="/dev/null", 
+                  from_format=None, format_to="fastq", 
+                  options=dict()):
+
+    extra_options = dict_to_cmd_opts(options)
+    targets = [ target for target in [outfname1, outfname2] 
+                if target != "/dev/null" ]
+
+    if not from_format:
+        from_format = guess_seq_filetype(targets[0])
+
+    pair_cmd = ("sequence_pair"
+                " -f {from_format} -t {format_to}"
+                " -1 {r1out} -2 {r2out} "
+    ).format(
+        from_format=from_format, format_to=format_to,
+        r1out=outfname1, r2out=outfname2
+    )
+    pair_cmd += extra_options + " {} {}".format(seqfname1, seqfname2)
+    
+    return {
+        "name": "sequence_pair: %s %s"%(outfname1, outfname2),
+        "actions" : [pair_cmd],
+        "file_dep": [seqfname1, seqfname2],
+        "targets": targets
+    }
+
+
+
