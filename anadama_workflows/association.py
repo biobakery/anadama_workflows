@@ -176,6 +176,34 @@ def run_maaslin(read_config_file, maaslin_outfile, pcl_file):
     }
 
 
+def sparsity_filter(pcl_fname_from, pcl_fname_to):
+    from_, to_ = pcl_fname_from, pcl_fname_to
+
+    def _should_print(key, values):
+        "Keep the bugs that have >= 0.1% abundance in >= 10% of samples "
+        total_present = sum([ val >= 0.001 for val in values ])
+        return total_present >= len(values)/10
+
+    def _mangle():
+        with open(from_) as in_f, open(to_, 'w') as out_f:
+            out_f.write( in_f.readline() ) # bump off metadata line
+            for line in in_f:
+                fields = line.strip().split('\t')
+                key, values = fields[0], map(float, fields[1:])
+                if _should_print(key, values):
+                    to_print = [key] + map(str, values)
+                    print >> out_f, "\t".join(to_print)
+            
+
+    return {
+        "name"     : "sparsity_filter:" + from_,
+        "actions"  : [_mangle],
+        "file_dep" : [from_],
+        "targets"  : [to_]
+    }
+
+
+
 def maaslin(otu_table, metadata_file):
     """Workflow to compute the significance of association in microbial
     community using a transform abundance or relative function table
@@ -203,6 +231,8 @@ def maaslin(otu_table, metadata_file):
     # (ie maaslin_demo2 for maaslin_demo2.tsv")
     initial_targets = [new_file_basename + "_maaslin.pcl",
         new_file_basename + "_maaslin.tsv"]    
+
+    filtered_target = new_file_basename + "_desparsed_maaslin.pcl"
     
     # project specific read_config_file
     read_config_file = new_file_basename + "_maaslin.read.config"
@@ -218,10 +248,13 @@ def maaslin(otu_table, metadata_file):
         yield biom_to_tsv(otu_table,otu_table_tsv_format)
         otu_table_maaslin_format=new_file_basename + "_format_maaslin.tsv"
         yield qiime_to_maaslin(otu_table_tsv_format, otu_table_maaslin_format)
-        yield merge_otu_metadata(otu_table_maaslin_format,
+        yield sparsity_filter(otu_table_maaslin_format, filtered_target)
+        yield merge_otu_metadata(filtered_target,
                                  metadata_file, initial_targets[0])
     else:
-        yield merge_otu_metadata(otu_table, metadata_file,initial_targets[0])
+        yield sparsity_filter(otu_table, filtered_target)
+        yield merge_otu_metadata(filtered_target, 
+                                 metadata_file, initial_targets[0])
     
     # create new project specific read.config file for maaslin input
     yield create_maaslin_read_config(metadata_file,
