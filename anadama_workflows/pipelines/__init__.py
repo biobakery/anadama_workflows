@@ -90,7 +90,7 @@ def maybe_stitch(maybe_pairs, products_dir, barcode_files=list()):
         tasks.append( general.fastq_join(forward, reverse, output) )
         if maybe_barcode:
             filtered_barcode = util.new_file(
-                addtag(maybe_barcode, "filtered"),
+                util.addtag(maybe_barcode, "filtered"),
                 basedir=products_dir
             )
             pairtask = general.sequence_pair(
