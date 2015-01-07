@@ -252,9 +252,14 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
         if len(length_histogram) == 1 or use_most_common:
             bcode_len = length_histogram.most_common(1)[0][0]
-            return str(bcode_len)
+            bcode_len = str(bcode_len)
         else:
             return "variable_length"
+
+        if bcode_len == "12":
+            bcode_len = "golay_12"
+
+        return bcode_len
 
 
 
