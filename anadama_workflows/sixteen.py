@@ -146,7 +146,7 @@ def demultiplex_illumina(fastq_fnames, barcode_fnames, map_fname, output_fname,
         with open(map_fname) as from_map:
             from_samples = deserialize_map_file(from_map)
             serialize_map_file(
-                ( _reverse(s) for s in from_samples ),
+                [ _reverse(s) for s in from_samples ],
                 revcomp_map_fname
             )
 
