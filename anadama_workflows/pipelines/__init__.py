@@ -79,8 +79,8 @@ def maybe_stitch(maybe_pairs, products_dir, barcode_files=list()):
     tasks = list()
     barcodes = list()
 
-    if type(iter(pairs).next()) not in (tuple, list):
-        return maybe_pairs, barcode_files, list()
+    if not pairs:
+        return singles, barcode_files, tasks
 
     for pair, maybe_barcode in izip_longest(pairs, barcode_files):
         (forward, reverse), maybe_tasks = maybe_convert_to_fastq(
