@@ -6,7 +6,7 @@ import itertools
 from os.path import join
 
 
-from anadama.action import CmdAction
+from anadama.action import CmdAction, PythonAction
 from anadama.decorators import requires
 from anadama import strategies
 
@@ -115,7 +115,8 @@ def demultiplex(map_fname, fasta_fname, qual_fname, output_fname,
           version_methods=["qiime_cmd print_qiime_config.py "
                            "| awk '/QIIME library version/{print $NF;}'"])
 def demultiplex_illumina(fastq_fnames, barcode_fnames, map_fname, output_fname,
-                         qiime_opts={}):
+                         verbose=True, qiime_opts={}):
+
     output_dir=os.path.dirname(output_fname)
     default_opts = {
         "i": ",".join(fastq_fnames),
@@ -126,12 +127,42 @@ def demultiplex_illumina(fastq_fnames, barcode_fnames, map_fname, output_fname,
     default_opts.update(qiime_opts)
     opts = dict_to_cmd_opts(default_opts)
     
-    cmd = ("qiime_cmd split_libraries_fastq.py"+
-           " "+opts)
+    cmd = "qiime_cmd split_libraries_fastq.py "
+
+    revcomp_map_fname = new_file(addtag(map_fname, "revcomp"),
+                                 basedir=output_dir)
+    revcomp_opts = default_opts.copy()
+    recvomp_opts['m'] = revcomp_map_fname
+    revcomp_opts = dict_to_cmd_opts(revcomp_opts)
+    def _revcomp():
+        from anadama.util import deserialize_map_file
+        from Bio.Seq import Seq
+
+        def _reverse(sample):
+            seq = Seq(sample.BarcodeSequence).reverse_complement()
+            sample.BarcodeSequence = str(seq)
+            return sample
+
+        with open(map_fname) as from_map:
+            from_samples = deserialize_map_file(from_map)
+            serialize_map_file(
+                ( _reverse(s) for s in from_samples ),
+                revcomp_map_fname
+            )
+
+
+    def run():
+        strategies.backup(
+            (CmdAction(cmd+opts, verbose=verbose),
+             strategies.Group(
+                 PythonAction(_revcomp),
+                 CmdAction(cmd+revcomp_opts,verbose=verbose))),
+        )
+
 
     return {
         "name": "demultiplex_illumina:"+output_fname,
-        "actions": [cmd],
+        "actions": [run],
         "file_dep": list(fastq_fnames) + list(barcode_fnames) + [map_fname],
         "targets": [output_fname]
     }
