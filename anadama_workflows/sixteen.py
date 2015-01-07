@@ -16,7 +16,7 @@ from anadama.util import (
     addtag,
     new_file,
     dict_to_cmd_opts, 
-    guess_seq_filetype
+    guess_seq_filetype,
 )
 
 from . import ( 
@@ -132,10 +132,10 @@ def demultiplex_illumina(fastq_fnames, barcode_fnames, map_fname, output_fname,
     revcomp_map_fname = new_file(addtag(map_fname, "revcomp"),
                                  basedir=output_dir)
     revcomp_opts = default_opts.copy()
-    recvomp_opts['m'] = revcomp_map_fname
+    revcomp_opts['m'] = revcomp_map_fname
     revcomp_opts = dict_to_cmd_opts(revcomp_opts)
     def _revcomp():
-        from anadama.util import deserialize_map_file
+        from anadama.util import deserialize_map_file, serialize_map_file
         from Bio.Seq import Seq
 
         def _reverse(sample):
