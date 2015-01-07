@@ -140,13 +140,12 @@ def demultiplex_illumina(fastq_fnames, barcode_fnames, map_fname, output_fname,
 
         def _reverse(sample):
             seq = Seq(sample.BarcodeSequence).reverse_complement()
-            sample.BarcodeSequence = str(seq)
-            return sample
+            return sample._replace(BarcodeSequence=str(seq))
 
         with open(map_fname) as from_map:
             from_samples = deserialize_map_file(from_map)
             serialize_map_file(
-                [ _reverse(s) for s in from_samples ],
+                ( _reverse(s) for s in from_samples ),
                 revcomp_map_fname
             )
 
