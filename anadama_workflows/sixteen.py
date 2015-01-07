@@ -152,7 +152,7 @@ def demultiplex_illumina(fastq_fnames, barcode_fnames, map_fname, output_fname,
 
 
     def run():
-        strategies.backup(
+        return strategies.backup(
             (CmdAction(cmd+opts, verbose=verbose),
              strategies.Group(
                  PythonAction(_revcomp),
@@ -162,7 +162,7 @@ def demultiplex_illumina(fastq_fnames, barcode_fnames, map_fname, output_fname,
 
     return {
         "name": "demultiplex_illumina:"+output_fname,
-        "actions": [run],
+        "actions": [PythonAction(run)],
         "file_dep": list(fastq_fnames) + list(barcode_fnames) + [map_fname],
         "targets": [output_fname]
     }
