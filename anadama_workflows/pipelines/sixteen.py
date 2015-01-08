@@ -186,8 +186,8 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
     def split_illumina_style(self, seqfiles_to_split, barcode_seqfiles):
         demuxed, tasks = list(), list()
-        bcode_pairs = zip(sorted(seqfiles_to_split), sorted(barcode_seqfiles))
-        map_fname = self._get_or_create_sample_metadata()
+        bcode_pairs = zip(seqfiles_to_split, barcode_seqfiles)
+
         options = self.options.get("demultiplex_illumina", dict())
         if 'barcode_type' not in options:
             options['barcode_type'] = self._determine_barcode_type(
@@ -195,6 +195,16 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
         for seqfile, bcode_file in bcode_pairs:
             sample_dir = join(self.products_dir, basename(seqfile)+"_split")
+
+            map_fname = util.new_file("map.txt", basedir=sample_dir)
+            sample_group = self._filter_samples_for_file(
+                self.sample_metadata, seqfile,
+                key=lambda val: val.Run_accession)
+            tasks.append( sixteen.write_map(
+                sample_group, sample_dir, 
+                **self.options.get('write_map', dict())
+            ) )
+
             outfile = util.new_file("seqs.fna", basedir=sample_dir) 
             demuxed.append(outfile)
             tasks.append( sixteen.demultiplex_illumina(
