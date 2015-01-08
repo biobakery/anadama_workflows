@@ -112,7 +112,11 @@ def maybe_decompress(raw_seq_files):
         idxs = list(util.which_compressed_idxs(raw_seq_files))
         compressed_files = util.take(raw_seq_files, idxs)
     else:
-        idxs, compressed_files = zip(*util.filter_compressed(raw_seq_files))
+        packed = zip(*util.filter_compressed(raw_seq_files))
+        if packed:
+            idxs, compressed_files = packed
+        else:
+            idxs, compressed_files = list(), list()
     
     comp_raw_seq_files = []
 
