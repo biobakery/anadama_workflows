@@ -88,7 +88,7 @@ class WGSPipeline(Pipeline, SampleFilterMixin):
             'decontaminate':    { }, 
             'metaphlan2':       { },
             'bowtie2_align':    { },
-            'humann':           { }
+            'humann':           { 'pick_frames': 'on'}
         }
         self.options.update(workflow_options)
 
@@ -103,7 +103,7 @@ class WGSPipeline(Pipeline, SampleFilterMixin):
 
 
     def _configure(self):
-        self.raw_seq_files, maybe_tasks = maybe_stitch(self.raw_seq_files,
+        self.raw_seq_files, _, maybe_tasks = maybe_stitch(self.raw_seq_files,
                                                        self.products_dir)
         for t in maybe_tasks:
             yield t
