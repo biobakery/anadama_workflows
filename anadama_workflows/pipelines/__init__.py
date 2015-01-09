@@ -1,6 +1,6 @@
 import re
 import os
-from itertools import dropwhile, chain
+from itertools import dropwhile, chain, izip_longest
 from anadama import util
 
 from .. import general
@@ -74,31 +74,49 @@ class SampleMetadataMixin(object):
 
 
 
-def maybe_stitch(maybe_pairs, products_dir):
-        pairs, singles = split_pairs(maybe_pairs)
-        tasks = list()
-        for pair in pairs:
-            (forward, reverse), maybe_tasks = maybe_convert_to_fastq(
-                pair, products_dir)
-            tasks.extend(maybe_tasks)
-            output = util.new_file( 
-                _to_merged(forward),
-                basedir=products_dir 
-            )
-            singles.append(output)
-            tasks.append( general.fastq_join(forward, reverse, output) )
+def maybe_stitch(maybe_pairs, products_dir, barcode_files=list()):
+    pairs, singles = split_pairs(maybe_pairs)
+    tasks = list()
+    barcodes = list()
 
-        return singles, tasks
+    if not pairs:
+        return singles, barcode_files, tasks
+
+    for pair, maybe_barcode in izip_longest(pairs, barcode_files):
+        (forward, reverse), maybe_tasks = maybe_convert_to_fastq(
+            pair, products_dir)
+        tasks.extend(maybe_tasks)
+        output = util.new_file( 
+            _to_merged(forward),
+            basedir=products_dir 
+        )
+        singles.append(output)
+        tasks.append( general.fastq_join(forward, reverse, output) )
+        if maybe_barcode:
+            filtered_barcode = util.new_file(
+                util.addtag(maybe_barcode, "filtered"),
+                basedir=products_dir
+            )
+            pairtask = general.sequence_pair(
+                maybe_barcode, output,
+                outfname1=filtered_barcode,
+                options={"inner_join": "right"}
+            )
+            barcodes.append(filtered_barcode)
+            tasks.append(pairtask)
+
+    return singles, barcodes, tasks
 
 def maybe_decompress(raw_seq_files):
-    # ensure all files are decompressed
-    compressed_files = []
-    # raw_seq_files might be a list of tuples - thus handle differently
     if isinstance(raw_seq_files[0], tuple):
         idxs = list(util.which_compressed_idxs(raw_seq_files))
         compressed_files = util.take(raw_seq_files, idxs)
     else:
-        idxs, compressed_files = zip(*util.filter_compressed(raw_seq_files))
+        packed = zip(*util.filter_compressed(raw_seq_files))
+        if packed:
+            idxs, compressed_files = packed
+        else:
+            idxs, compressed_files = list(), list()
     
     comp_raw_seq_files = []
 
@@ -107,13 +125,15 @@ def maybe_decompress(raw_seq_files):
             raw_seq_files[idx[0]] = list(raw_seq_files[idx[0]])
             comp_raw_seq_file = raw_seq_files[idx[0]][idx[1]]
             comp_raw_seq_files.append(comp_raw_seq_file)
-            raw_seq_files[idx[0]][idx[1]] = os.path.splitext(comp_raw_seq_file)[0]
+            raw_seq_files[idx[0]][idx[1]] = os.path.splitext(
+                comp_raw_seq_file)[0]
         else:
             comp_raw_seq_file = raw_seq_files[idx]
             comp_raw_seq_files.append(comp_raw_seq_file)
             raw_seq_files[idx] = os.path.splitext(comp_raw_seq_file)[0]
 
     return raw_seq_files, comp_raw_seq_files
+
 
 def _to_merged(fname_str):
     fname_str = re.sub(r'(.*)[rR]1(.*)', r'\1merged\2', fname_str)
