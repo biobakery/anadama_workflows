@@ -24,13 +24,13 @@ class VisualizationPipeline(Pipeline, SampleMetadataMixin):
 
     Workflows used:
 
-      * anadama_workflows.sixteen.merge_otu_tables
-      * anadama_workflows.biom.add_metadata
-      * anadama_workflows.visualization.stacked_bar_chart
-      * anadama_workflows.biom.to_tsv
-      * anadama_workflows.association.qiime_to_maaslin
-      * anadama_workflows.association.merge_otu_metadata
-      * anadama_workflows.visualization.breadcrumbs_pcoa_plot
+      * :py:func:`anadama_workflows.sixteen.merge_otu_tables`
+      * :py:func:`anadama_workflows.biom.add_metadata`
+      * :py:func:`anadama_workflows.visualization.stacked_bar_chart`
+      * :py:func:`anadama_workflows.biom.to_tsv`
+      * :py:func:`anadama_workflows.association.qiime_to_maaslin`
+      * :py:func:`anadama_workflows.association.merge_otu_metadata`
+      * :py:func:`anadama_workflows.visualization.breadcrumbs_pcoa_plot`
 
     """
 
