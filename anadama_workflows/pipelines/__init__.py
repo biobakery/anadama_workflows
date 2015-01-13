@@ -157,8 +157,11 @@ def maybe_stitch(maybe_pairs, products_dir, barcode_files=list()):
 
     return singles, barcodes, tasks
 
+
 def maybe_decompress(raw_seq_files):
-    if isinstance(raw_seq_files[0], tuple):
+    if not raw_seq_files:
+        idxs, compressed_files = list(), list()
+    elif isinstance(raw_seq_files[0], tuple):
         idxs = list(util.which_compressed_idxs(raw_seq_files))
         compressed_files = util.take(raw_seq_files, idxs)
     else:
