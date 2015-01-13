@@ -44,6 +44,10 @@ class VisualizationPipeline(Pipeline, SampleMetadataMixin):
         'pcl_files'        : list()
     }
 
+    default_options = {
+        'stacked_bar_chart': { }
+    }
+
     def __init__(self, sample_metadata,
                  otu_tables=list(),
                  pcl_files=list(),
@@ -77,9 +81,7 @@ class VisualizationPipeline(Pipeline, SampleMetadataMixin):
 
         super(VisualizationPipeline, self).__init__(*args, **kwargs)
 
-        self.options = {
-            'stacked_bar_chart': { }
-        }
+        self.options = self.default_options.copy()
         self.options.update(workflow_options)
         
         self.add_products(sample_metadata   = sample_metadata,

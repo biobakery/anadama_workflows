@@ -49,6 +49,17 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
         "otu_tables"               : list(),
     }
 
+    default_options = {
+        'infer_pairs':         {
+            'infer': True
+        },
+        'sequence_convert': { },
+        'decontaminate':    { },
+        'metaphlan2':       { },
+        'bowtie2_align':    { },
+        'humann':           { }
+    }
+
     def __init__(self, sample_metadata,
                  raw_seq_files=list(), 
                  intermediate_fastq_files=list(),
@@ -85,13 +96,7 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
             products_dir = settings.workflows.product_directory
         self.products_dir = os.path.realpath(products_dir)
 
-        self.options = {
-            'sequence_convert': { }, 
-            'decontaminate':    { }, 
-            'metaphlan2':       { },
-            'bowtie2_align':    { },
-            'humann':           { }
-        }
+        self.options = self.default_options.copy()
         self.options.update(workflow_options)
 
         self.add_products(
