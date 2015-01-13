@@ -52,6 +52,22 @@ class SampleMetadataMixin(object):
         return os.path.join(dir_, "map.txt")
 
 
+    def _unpack_metadata(self, default=None):
+        if type(self.sample_metadata) is str:
+            self.sample_metadata = [self.sample_metadata]
+        if type(self.sample_metadata[0]) is str:
+            with open(self.sample_metadata[0]) as metadata_f:
+                samples = list( util.deserialize_map_file(metadata_f) )
+                
+        if not samples:
+            if default:
+                self.sample_metadata = default()
+            else:
+                raise ValueError("Unable to read map.txt file. Empty file.")
+        else:
+            self.sample_metadata = samples
+
+
     def _get_or_create_sample_metadata(self):
         if type(self.sample_metadata) is not str:
             sample_metadata_fname = self._inferred_sample_metadata_fname

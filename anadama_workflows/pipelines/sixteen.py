@@ -103,11 +103,7 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
                           demuxed_fasta_files = demuxed_fasta_files,
                           otu_tables          = otu_tables)
 
-        if type(sample_metadata) is str:
-            with open(sample_metadata) as metadata_f:
-                self.sample_metadata = list(
-                    util.deserialize_map_file(metadata_f)
-                )
+        self._unpack_metadata()
 
         if not products_dir:
             products_dir = settings.workflows.product_directory

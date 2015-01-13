@@ -1,5 +1,6 @@
 import os
 from os.path import basename
+from collections import namedtuple
 
 from anadama import util
 from anadama.pipelines import Pipeline
@@ -7,10 +8,11 @@ from anadama.pipelines import Pipeline
 from .. import settings
 from .. import general, wgs, alignment
 
-from . import SampleFilterMixin, maybe_stitch
+from . import SampleFilterMixin, SampleMetadataMixin
+from . import maybe_stitch, infer_pairs
 
 
-class WGSPipeline(Pipeline, SampleFilterMixin):
+class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
     """Pipeline for analyzing whole metagenome shotgun sequence data.
     Produces taxonomic profiles with metaphlan2 and gene, pathway
@@ -100,6 +102,11 @@ class WGSPipeline(Pipeline, SampleFilterMixin):
             metaphlan_results          = list(),
             otu_tables                 = list()
         )
+
+        def _default_metadata():
+            cls = namedtuple("Sample", ['SampleID'])
+            return [ cls(basename(f)) for f in raw_seq_files ]
+        self._unpack_metadata(default = _default_metadata)
 
 
     def _configure(self):
