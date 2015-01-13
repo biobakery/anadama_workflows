@@ -15,7 +15,8 @@ from . import (
     SampleFilterMixin, 
     SampleMetadataMixin, 
     maybe_stitch, 
-    maybe_decompress
+    maybe_decompress,
+    infer_pairs
 )
 
 
@@ -134,7 +135,11 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
                 self.barcode_seq_files)
             for compressed_file in compressed + compressed2:
                 yield general.extract(compressed_file)
-                
+            
+            if self.options['infer_pairs'].get('infer'):
+                paired, notpaired = infer_pairs(self.raw_seq_files)
+                self.raw_seq_files = paired + notpaired
+
             packed = maybe_stitch(
                 self.raw_seq_files,
                 self.products_dir,
