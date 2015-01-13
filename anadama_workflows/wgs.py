@@ -89,8 +89,6 @@ def humann2(seqfile_in, output_dir, **opts):
         "input"  : seqfile_in,
         "output" : os.path.realpath(output_dir),
         
-        "metaphlan_bowtie2db": settings.workflows.metaphlan2.bowtie2db,
-        "metaphlan_pkl"      : settings.workflows.metaphlan2.mpa_pkl,
         "uniref"             : settings.workflows.humann2.uniref_path,
         "chocophlan"         : settings.workflows.humann2.chocophlan_path,
         "pathways_databases" : settings.workflows.humann2.pathways_databases,
@@ -103,11 +101,14 @@ def humann2(seqfile_in, output_dir, **opts):
     cmd = "humann2.py " + opts_str
 
     suffix = default_opts['output_format']
-    _join = lambda s: new_file(os.path.basename(seqfile_in) + s,
-                               basedir=default_opts['output'] )
-    targets = map(_join, ("_genefamilies."+suffix, 
-                          "_pathcoverage."+suffix, 
-                          "_pathabundance."+suffix))
+    def _join(s):
+        file, ext = os.path.splitext(seqfile_in)
+        file = file + '.' + suffix
+        return new_file(addtag(file, s), basedir=default_opts['output'])
+
+    targets = map(_join, ("genefamilies", 
+                          "pathcoverage", 
+                          "pathabundance"))
 
     return {
         "name"     : "humann2:"+output_dir,
