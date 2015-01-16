@@ -1,5 +1,6 @@
-import os
+cimport os
 from os.path import basename
+from collections import namedtuple
 
 from anadama import util
 from anadama.pipelines import Pipeline
@@ -7,10 +8,11 @@ from anadama.pipelines import Pipeline
 from .. import settings
 from .. import general, wgs, alignment
 
-from . import SampleFilterMixin, maybe_stitch
+from . import SampleFilterMixin, SampleMetadataMixin
+from . import maybe_stitch, infer_pairs
 
 
-class WGSPipeline(Pipeline, SampleFilterMixin):
+class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
     """Pipeline for analyzing whole metagenome shotgun sequence data.
     Produces taxonomic profiles with metaphlan2 and gene, pathway
@@ -45,6 +47,17 @@ class WGSPipeline(Pipeline, SampleFilterMixin):
         "alignment_result_files"   : list(),
         "metaphlan_results"        : list(),
         "otu_tables"               : list(),
+    }
+
+    default_options = {
+        'infer_pairs':         {
+            'infer': True
+        },
+        'sequence_convert': { },
+        'decontaminate':    { },
+        'metaphlan2':       { },
+        'bowtie2_align':    { },
+        'humann':           { }
     }
 
     def __init__(self, sample_metadata,
@@ -83,13 +96,7 @@ class WGSPipeline(Pipeline, SampleFilterMixin):
             products_dir = settings.workflows.product_directory
         self.products_dir = os.path.realpath(products_dir)
 
-        self.options = {
-            'sequence_convert': { }, 
-            'decontaminate':    { }, 
-            'metaphlan2':       { },
-            'bowtie2_align':    { },
-            'humann':           { 'pick_frames': 'on'}
-        }
+        self.options = self.default_options.copy()
         self.options.update(workflow_options)
 
         self.add_products(
@@ -101,10 +108,19 @@ class WGSPipeline(Pipeline, SampleFilterMixin):
             otu_tables                 = list()
         )
 
+        def _default_metadata():
+            cls = namedtuple("Sample", ['SampleID'])
+            return [ cls(basename(f)) for f in raw_seq_files ]
+        self._unpack_metadata(default = _default_metadata)
+
 
     def _configure(self):
+        if self.options['infer_pairs'].get('infer'):
+            paired, notpaired = infer_pairs(self.raw_seq_files)
+            self.raw_seq_files = paired + notpaired
+
         self.raw_seq_files, _, maybe_tasks = maybe_stitch(self.raw_seq_files,
-                                                       self.products_dir)
+                                                          self.products_dir)
         for t in maybe_tasks:
             yield t
 

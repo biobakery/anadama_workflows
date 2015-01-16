@@ -52,6 +52,22 @@ class SampleMetadataMixin(object):
         return os.path.join(dir_, "map.txt")
 
 
+    def _unpack_metadata(self, default=None):
+        if type(self.sample_metadata) is str:
+            self.sample_metadata = [self.sample_metadata]
+        if type(self.sample_metadata[0]) is str:
+            with open(self.sample_metadata[0]) as metadata_f:
+                samples = list( util.deserialize_map_file(metadata_f) )
+                
+        if not samples:
+            if default:
+                self.sample_metadata = default()
+            else:
+                raise ValueError("Unable to read map.txt file. Empty file.")
+        else:
+            self.sample_metadata = samples
+
+
     def _get_or_create_sample_metadata(self):
         if type(self.sample_metadata) is not str:
             sample_metadata_fname = self._inferred_sample_metadata_fname
@@ -72,6 +88,40 @@ class SampleMetadataMixin(object):
             else:
                 return self.sample_metadata
 
+
+def infer_pairs(list_fnames):
+    one_files, two_files, notpairs = _regex_filter(list_fnames)
+    if len(one_files) != len(two_files):
+        pairs = list()
+        notpairs.extend(one_files)
+        notpairs.extend(two_files)
+    else:
+        pairs = zip( sorted(one_files), sorted(two_files) )
+    
+    return pairs, notpairs
+
+
+def _regex_filter(list_fnames):
+    """Go through each name; group into R1, R2, or singleton based on a
+    regular expression that searches for R1 or r2 or R2 or r1.
+
+    """
+    regex = re.compile(r'[-._ ][rR]([12])[-._ ]')
+    one, two, notpairs = list(), list(), list()
+
+    matches = zip( list_fnames, map(regex.search, list_fnames))
+    for fname, regex_result in matches:
+        if not regex_result:
+            notpairs.append(fname)
+        else:
+            if regex_result.group(1) == "1":
+                one.append(fname)
+            elif regex_result.group(1) == "2":
+                two.append(fname)
+            else:
+                notpairs.append(fname)    
+
+    return one, two, notpairs
 
 
 def maybe_stitch(maybe_pairs, products_dir, barcode_files=list()):
@@ -107,8 +157,11 @@ def maybe_stitch(maybe_pairs, products_dir, barcode_files=list()):
 
     return singles, barcodes, tasks
 
+
 def maybe_decompress(raw_seq_files):
-    if isinstance(raw_seq_files[0], tuple):
+    if not raw_seq_files:
+        idxs, compressed_files = list(), list()
+    elif isinstance(raw_seq_files[0], tuple):
         idxs = list(util.which_compressed_idxs(raw_seq_files))
         compressed_files = util.take(raw_seq_files, idxs)
     else:

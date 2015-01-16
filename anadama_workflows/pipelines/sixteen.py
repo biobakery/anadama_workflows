@@ -15,7 +15,8 @@ from . import (
     SampleFilterMixin, 
     SampleMetadataMixin, 
     maybe_stitch, 
-    maybe_decompress
+    maybe_decompress,
+    infer_pairs
 )
 
 
@@ -55,6 +56,22 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
         "barcode_seq_files"   : list(),
         "demuxed_fasta_files" : list(),
         "otu_tables"          : list()
+    }
+
+    default_options = {
+        'infer_pairs':         {
+            'infer': True
+        },
+        'write_map':            { },
+        'fastq_split':          { },
+        'demultiplex':          {
+            'qiime_opts': { 
+                'M': '2'    
+            }
+        },
+        'demultiplex_illumina': { },
+        'pick_otus_closed_ref': { },
+        'picrust':              { },
     }
 
     def __init__(self,
@@ -103,28 +120,13 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
                           demuxed_fasta_files = demuxed_fasta_files,
                           otu_tables          = otu_tables)
 
-        if type(sample_metadata) is str:
-            with open(sample_metadata) as metadata_f:
-                self.sample_metadata = list(
-                    util.deserialize_map_file(metadata_f)
-                )
+        self._unpack_metadata()
 
         if not products_dir:
             products_dir = settings.workflows.product_directory
         self.products_dir = os.path.realpath(products_dir)
 
-        self.options = {
-            'write_map':            { },
-            'fastq_split':          { },
-            'demultiplex':          {
-                'qiime_opts': { 
-                    'M': '2'    
-                }
-            },
-            'demultiplex_illumina': { },
-            'pick_otus_closed_ref': { },
-            'picrust':              { },
-        }
+        self.options = self.default_options.copy()
         self.options.update(workflow_options)
         
 
@@ -138,7 +140,11 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
                 self.barcode_seq_files)
             for compressed_file in compressed + compressed2:
                 yield general.extract(compressed_file)
-                
+            
+            if self.options['infer_pairs'].get('infer'):
+                paired, notpaired = infer_pairs(self.raw_seq_files)
+                self.raw_seq_files = paired + notpaired
+
             packed = maybe_stitch(
                 self.raw_seq_files,
                 self.products_dir,
