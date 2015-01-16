@@ -1,4 +1,4 @@
-cimport os
+import os
 from os.path import basename
 from collections import namedtuple
 
