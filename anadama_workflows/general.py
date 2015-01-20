@@ -128,6 +128,9 @@ def sequence_convert(files_list, output_file=None,
     if not from_format:
         from_format = guess_seq_filetype(files_list[0])
 
+    if type(lenfilters_list) is not list:
+        lenfilters_list = list(lenfilters_list)
+
     cmd = ("sequence_convert"
            + " --format="+from_format
            + " --to="+format_to
