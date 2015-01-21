@@ -53,6 +53,7 @@ class SampleMetadataMixin(object):
 
 
     def _unpack_metadata(self, default=None):
+        samples = []
         if type(self.sample_metadata) is str:
             self.sample_metadata = [self.sample_metadata]
         if type(self.sample_metadata[0]) is str:
