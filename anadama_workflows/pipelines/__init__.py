@@ -1,3 +1,7 @@
+"""
+All anadama_workflows pipelines
+"""
+
 import re
 import os
 from itertools import dropwhile, chain, izip_longest
