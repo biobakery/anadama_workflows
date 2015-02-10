@@ -63,6 +63,8 @@ class SampleMetadataMixin(object):
         if type(self.sample_metadata[0]) is str:
             with open(self.sample_metadata[0]) as metadata_f:
                 samples = list( util.deserialize_map_file(metadata_f) )
+        if str(self.sample_metadata[0]).startswith("Sample"):
+            samples = self.sample_metadata
                 
         if not samples:
             if default:
