@@ -134,12 +134,12 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
         # ensure all files are decompressed
         # possibly stitch paired reads, demultiplex, and quality filter
         if self.raw_seq_files:
-            self.raw_seq_files, compressed = maybe_decompress(
-                self.raw_seq_files)
-            self.barcode_seq_files, compressed2 = maybe_decompress(
-                self.barcode_seq_files)
-            for compressed_file in compressed + compressed2:
-                yield general.extract(compressed_file)
+            self.raw_seq_files, maybe_tasks = maybe_decompress(
+                self.raw_seq_files, self.products_dir) 
+            yield maybe_tasks
+            self.barcode_seq_files, maybe_tasks = maybe_decompress(
+                self.barcode_seq_files, self.products_dir)  
+            yield maybe_tasks
             
             if self.options['infer_pairs'].get('infer'):
                 paired, notpaired = infer_pairs(self.raw_seq_files)

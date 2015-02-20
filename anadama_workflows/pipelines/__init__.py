@@ -1,3 +1,7 @@
+"""
+All anadama_workflows pipelines
+"""
+
 import re
 import os
 from itertools import dropwhile, chain, izip_longest
@@ -53,11 +57,14 @@ class SampleMetadataMixin(object):
 
 
     def _unpack_metadata(self, default=None):
+        samples = []
         if type(self.sample_metadata) is str:
             self.sample_metadata = [self.sample_metadata]
         if type(self.sample_metadata[0]) is str:
             with open(self.sample_metadata[0]) as metadata_f:
                 samples = list( util.deserialize_map_file(metadata_f) )
+        if str(self.sample_metadata[0]).startswith("Sample"):
+            samples = self.sample_metadata
                 
         if not samples:
             if default:
@@ -158,7 +165,7 @@ def maybe_stitch(maybe_pairs, products_dir, barcode_files=list()):
     return singles, barcodes, tasks
 
 
-def maybe_decompress(raw_seq_files):
+def maybe_decompress(raw_seq_files, products_dir):
     if not raw_seq_files:
         idxs, compressed_files = list(), list()
     elif isinstance(raw_seq_files[0], tuple):
@@ -171,21 +178,24 @@ def maybe_decompress(raw_seq_files):
         else:
             idxs, compressed_files = list(), list()
     
-    comp_raw_seq_files = []
+    tasks = []
+
+    def _decompress(f):
+        unz_f = os.path.splitext(f)[0]
+        unz_f = util.new_file( os.path.basename(unz_f), basedir=products_dir )
+        tasks.append(general.extract(f, unz_f))
+        return unz_f
 
     for idx in idxs:
         if isinstance(idx, tuple):
             raw_seq_files[idx[0]] = list(raw_seq_files[idx[0]])
-            comp_raw_seq_file = raw_seq_files[idx[0]][idx[1]]
-            comp_raw_seq_files.append(comp_raw_seq_file)
-            raw_seq_files[idx[0]][idx[1]] = os.path.splitext(
-                comp_raw_seq_file)[0]
+            compressed = raw_seq_files[idx[0]][idx[1]]
+            raw_seq_files[idx[0]][idx[1]] = _decompress(compressed)
         else:
-            comp_raw_seq_file = raw_seq_files[idx]
-            comp_raw_seq_files.append(comp_raw_seq_file)
-            raw_seq_files[idx] = os.path.splitext(comp_raw_seq_file)[0]
+            compressed = raw_seq_files[idx]
+            raw_seq_files[idx] = _decompress(compressed)
 
-    return raw_seq_files, comp_raw_seq_files
+    return raw_seq_files, tasks
 
 
 def _to_merged(fname_str):
