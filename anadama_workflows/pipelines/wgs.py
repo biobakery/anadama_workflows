@@ -41,12 +41,12 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
     name = "WGS"
     products = {
-        "sample_metadata"          : list(),
-        "raw_seq_files"            : list(),
-        "intermediate_fastq_files" : list(),
-        "alignment_result_files"   : list(),
-        "metaphlan_results"        : list(),
-        "otu_tables"               : list(),
+        "sample_metadata"            : list(),
+        "raw_seq_files"              : list(),
+        "intermediate_fastq_files"   : list(),
+        "decontaminated_fastq_files" : list(),
+        "metaphlan_results"          : list(),
+        "otu_tables"                 : list(),
     }
 
     default_options = {
@@ -157,7 +157,7 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
                 # first index is for first item in list of samples
                 # second index is to get the sample id from the sample
                 sample_id=self._filter_samples_for_file(self.sample_metadata,
-                                                        fastq_file)[0][0],
+                                                        d_fastq)[0][0],
                 **self.options.get('metaphlan2', dict())
             )
             self.metaphlan_results.append(metaphlan_file)
@@ -165,8 +165,6 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
             # Finally, HUMAnN all alignment files
             humann_output_dir = d_fastq+"_humann"
-            yield wgs.humann2(
-                decontaminated_fastq, humann_output_dir, 
-                **self.options.get('humann', dict())
-            )
+            yield wgs.humann2( d_fastq, humann_output_dir, 
+                               **self.options.get('humann', dict()) )
             
