@@ -108,6 +108,10 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
             otu_tables                 = list()
         )
 
+        self.sequence_attrs = (self.raw_seq_files,
+                               self.intermediate_fastq_files,
+                               self.decontaminated_fastq_files)
+
         def _default_metadata():
             cls = namedtuple("Sample", ['SampleID'])
             return [ cls(basename(f)) for f in raw_seq_files ]
@@ -119,10 +123,10 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
             paired, notpaired = infer_pairs(self.raw_seq_files)
             self.raw_seq_files = paired + notpaired
 
-        self.raw_seq_files, _, maybe_tasks = maybe_stitch(self.raw_seq_files,
-                                                          self.products_dir)
-        for t in maybe_tasks:
-            yield t
+        for seq_set in self.sequence_attrs:
+            seq_set, _, maybe_tasks = maybe_stitch(seq_set, self.products_dir)
+            for t in maybe_tasks:
+                yield t
 
         for file_ in self.raw_seq_files:
             fastq_file = util.new_file( basename(file_)+"_filtered.fastq",
