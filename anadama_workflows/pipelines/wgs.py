@@ -137,20 +137,22 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
             )
             self.intermediate_fastq_files.append(fastq_file)
 
+        for fastq_file in self.intermediate_fastq_files:
             name_base = os.path.join(self.products_dir,
-                                     basename(file_))
+                                     basename(fastq_file))
             name_base = util.rmext(name_base)
             task_dict = wgs.knead_data([fastq_file], name_base).next()
             decontaminated_fastq = task_dict['targets'][0]
             self.decontaminated_fastq_files.append(decontaminated_fastq)
             yield task_dict
 
-            metaphlan_file = util.new_file( 
-                basename(file_)+".metaphlan2.pcl",
+        for d_fastq in self.decontaminated_fastq_files:
+            metaphlan_file = util.new_file(
+                basename(d_fastq)+".metaphlan2.pcl",
                 basedir=self.products_dir )
             otu_table = metaphlan_file.replace('.pcl', '.biom')
             yield wgs.metaphlan2(
-                [decontaminated_fastq], output_file=metaphlan_file,
+                [d_fastq], output_file=metaphlan_file,
                 biom=otu_table,
                 # first index is for first item in list of samples
                 # second index is to get the sample id from the sample
@@ -162,7 +164,7 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
             self.otu_tables.append(otu_table)
 
             # Finally, HUMAnN all alignment files
-            humann_output_dir = fastq_file+"_humann"
+            humann_output_dir = d_fastq+"_humann"
             yield wgs.humann2(
                 decontaminated_fastq, humann_output_dir, 
                 **self.options.get('humann', dict())
