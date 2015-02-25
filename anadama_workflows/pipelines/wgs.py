@@ -41,12 +41,12 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
     name = "WGS"
     products = {
-        "sample_metadata"          : list(),
-        "raw_seq_files"            : list(),
-        "intermediate_fastq_files" : list(),
-        "alignment_result_files"   : list(),
-        "metaphlan_results"        : list(),
-        "otu_tables"               : list(),
+        "sample_metadata"            : list(),
+        "raw_seq_files"              : list(),
+        "intermediate_fastq_files"   : list(),
+        "decontaminated_fastq_files" : list(),
+        "metaphlan_results"          : list(),
+        "otu_tables"                 : list(),
     }
 
     default_options = {
@@ -108,6 +108,10 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
             otu_tables                 = list()
         )
 
+        self.sequence_attrs = (self.raw_seq_files,
+                               self.intermediate_fastq_files,
+                               self.decontaminated_fastq_files)
+
         def _default_metadata():
             cls = namedtuple("Sample", ['SampleID'])
             return [ cls(basename(f)) for f in raw_seq_files ]
@@ -119,10 +123,10 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
             paired, notpaired = infer_pairs(self.raw_seq_files)
             self.raw_seq_files = paired + notpaired
 
-        self.raw_seq_files, _, maybe_tasks = maybe_stitch(self.raw_seq_files,
-                                                          self.products_dir)
-        for t in maybe_tasks:
-            yield t
+        for seq_set in self.sequence_attrs:
+            seq_set, _, maybe_tasks = maybe_stitch(seq_set, self.products_dir)
+            for t in maybe_tasks:
+                yield t
 
         for file_ in self.raw_seq_files:
             fastq_file = util.new_file( basename(file_)+"_filtered.fastq",
@@ -133,34 +137,34 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
             )
             self.intermediate_fastq_files.append(fastq_file)
 
+        for fastq_file in self.intermediate_fastq_files:
             name_base = os.path.join(self.products_dir,
-                                     basename(file_))
+                                     basename(fastq_file))
             name_base = util.rmext(name_base)
             task_dict = wgs.knead_data([fastq_file], name_base).next()
             decontaminated_fastq = task_dict['targets'][0]
             self.decontaminated_fastq_files.append(decontaminated_fastq)
             yield task_dict
 
-            metaphlan_file = util.new_file( 
-                basename(file_)+".metaphlan2.pcl",
+        for d_fastq in self.decontaminated_fastq_files:
+            metaphlan_file = util.new_file(
+                basename(d_fastq)+".metaphlan2.pcl",
                 basedir=self.products_dir )
             otu_table = metaphlan_file.replace('.pcl', '.biom')
             yield wgs.metaphlan2(
-                [decontaminated_fastq], output_file=metaphlan_file,
+                [d_fastq], output_file=metaphlan_file,
                 biom=otu_table,
                 # first index is for first item in list of samples
                 # second index is to get the sample id from the sample
                 sample_id=self._filter_samples_for_file(self.sample_metadata,
-                                                        fastq_file)[0][0],
+                                                        d_fastq)[0][0],
                 **self.options.get('metaphlan2', dict())
             )
             self.metaphlan_results.append(metaphlan_file)
             self.otu_tables.append(otu_table)
 
             # Finally, HUMAnN all alignment files
-            humann_output_dir = fastq_file+"_humann"
-            yield wgs.humann2(
-                decontaminated_fastq, humann_output_dir, 
-                **self.options.get('humann', dict())
-            )
+            humann_output_dir = d_fastq+"_humann"
+            yield wgs.humann2( d_fastq, humann_output_dir, 
+                               **self.options.get('humann', dict()) )
             
