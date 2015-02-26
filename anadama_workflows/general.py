@@ -153,10 +153,30 @@ def sequence_convert(files_list, output_file=None,
 @requires(binaries=['fastq-join'],
           version_methods=["md5sum `which fastq-join` | awk '{print $1;}'"])
 def fastq_join(forward_fname, reverse_fname, output_file, options=dict()):
+    """Workflow function for joining (aka stitching) paired-end fastq
+    files with ea-utils' ``fastq-join``. If the ``drop_unpaired``
+    option is set to True, unpaired forward reads are concatenated to
+    the joined fastq file.
 
-    # TODO: implement a file rename to actually get what the user put
-    # in for ``output_file`` instead of ``output_file``join or worse
-    # if the user puts a '%' in the ``output_file``.
+    :param forward_fname: String; file name for the forward reads.
+
+    :param reverse_fname: String; file name for the reverse reads.
+
+    :param output_file: String; file name for the the finished, joined reads.
+
+    :param options: Dictionary; interpreted as command line options to
+    be passed to the wrapped knead_data.py script.  No - or -- flags
+    are necessary; the correct - or --t flags are inferred based on
+    the length of the option.  For boolean options, use the key/value
+    pattern of { "my-option": "" }.
+
+    External Dependencies
+      - fastq-join: Part of ea-utils 1.1.2-806 'https://drive.google.com/folderview?id=0B7KhouP0YeRAOTFWWGVFYkFSQjg&usp=sharing'
+
+    """
+
+
+    drop_unpaired = options.pop('drop_unpaired', False)
 
     default_opts = {
         "o": output_file
@@ -172,9 +192,14 @@ def fastq_join(forward_fname, reverse_fname, output_file, options=dict()):
         renamed_output = output_file+"join"
     rename_cmd = "mv %s %s"%( renamed_output, output_file)
 
+    actions = [cmd, rename_cmd]
+    if not drop_unpaired:
+        unpaired_forward = renamed_output.replace("join", "un1")
+        actions.append( "cat %s >> %s"%(unpaired_forward, output_file) )
+
     return {
         "name": "fastq_join: %s..."%(output_file),
-        "actions": [cmd, rename_cmd],
+        "actions": actions,
         "file_dep": [forward_fname, reverse_fname],
         "targets": [output_file]
     }
