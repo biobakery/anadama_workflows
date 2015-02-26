@@ -119,11 +119,10 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
 
     def _configure(self):
-        if self.options['infer_pairs'].get('infer'):
-            paired, notpaired = infer_pairs(self.raw_seq_files)
-            self.raw_seq_files = paired + notpaired
-
         for seq_set in self.sequence_attrs:
+            if self.options['infer_pairs'].get('infer'):
+                paired, notpaired = infer_pairs(seq_set)
+                self.seq_set = paired + notpaired
             seq_set, _, maybe_tasks = maybe_stitch(seq_set, self.products_dir)
             for t in maybe_tasks:
                 yield t
