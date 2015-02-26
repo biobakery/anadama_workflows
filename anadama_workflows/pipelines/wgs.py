@@ -51,7 +51,8 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
     default_options = {
         'infer_pairs':         {
-            'infer': True
+            'infer': True,
+            'drop_unpaired': False
         },
         'sequence_convert': { },
         'decontaminate':    { },
@@ -108,9 +109,9 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
             otu_tables                 = list()
         )
 
-        self.sequence_attrs = (self.raw_seq_files,
-                               self.intermediate_fastq_files,
-                               self.decontaminated_fastq_files)
+        self.sequence_attrs = ("raw_seq_files",
+                               "intermediate_fastq_files",
+                               "decontaminated_fastq_files")
 
         def _default_metadata():
             cls = namedtuple("Sample", ['SampleID'])
@@ -119,11 +120,18 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
 
     def _configure(self):
-        for seq_set in self.sequence_attrs:
+        for attr in self.sequence_attrs:
+            seq_set = getattr(self, attr)
+
             if self.options['infer_pairs'].get('infer'):
                 paired, notpaired = infer_pairs(seq_set)
-                self.seq_set = paired + notpaired
-            seq_set, _, maybe_tasks = maybe_stitch(seq_set, self.products_dir)
+                seq_set = paired + notpaired
+
+            seq_set, _, maybe_tasks = maybe_stitch(
+                seq_set, self.products_dir, 
+                drop_unpaired=self.options['infer_pairs'].get('drop_unpaired'))
+
+            setattr(self, attr, seq_set)
             for t in maybe_tasks:
                 yield t
 

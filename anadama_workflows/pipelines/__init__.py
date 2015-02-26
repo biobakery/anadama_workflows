@@ -131,7 +131,8 @@ def _regex_filter(list_fnames):
     return one, two, notpairs
 
 
-def maybe_stitch(maybe_pairs, products_dir, barcode_files=list()):
+def maybe_stitch(maybe_pairs, products_dir, 
+                 barcode_files=list(), drop_unpaired=False):
     pairs, singles = split_pairs(maybe_pairs)
     tasks = list()
     barcodes = list()
@@ -148,8 +149,9 @@ def maybe_stitch(maybe_pairs, products_dir, barcode_files=list()):
             basedir=products_dir 
         )
         singles.append(output)
-        tasks.append( general.fastq_join(forward, reverse, output) )
-        if maybe_barcode:
+        tasks.append( general.fastq_join(forward, reverse, output, 
+                                         {'drop_unpaired': drop_unpaired}) )
+        if maybe_barcode and drop_unpaired:
             filtered_barcode = util.new_file(
                 util.addtag(maybe_barcode, "filtered"),
                 basedir=products_dir
