@@ -113,7 +113,7 @@ def _regex_filter(list_fnames):
     regular expression that searches for R1 or r2 or R2 or r1.
 
     """
-    regex = re.compile(r'[-._ ][rR]([12])[-._ ]')
+    regex = re.compile(r'[-._ ][rR]?([12])[-._ ]')
     one, two, notpairs = list(), list(), list()
 
     matches = zip( list_fnames, map(regex.search, list_fnames))
