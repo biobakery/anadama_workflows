@@ -201,10 +201,13 @@ def maybe_decompress(raw_seq_files, products_dir):
 
 
 def _to_merged(fname_str):
-    fname_str = re.sub(r'(.*)[rR]1(.*)', r'\1merged\2', fname_str)
+    fname_str = re.sub(r'(.*[-._ ])[rR]?[12]([-._ ].*)', 
+                       r'\1merged\2', fname_str)
     if fname_str.endswith(".gz"):
         fname_str = fname_str[:-3]
-
+    elif fname_str.endswith(".bz2"):
+        fname_str = fname_str[:-4]
+    
     return fname_str
 
 
