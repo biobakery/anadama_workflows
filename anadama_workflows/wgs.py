@@ -136,13 +136,13 @@ def metaphlan2(files_list, **opts):
 
     """
 
-    infiles_list   = files_list
-    def_outfile    = new_file(addext(files_list[0], "metaphlan2"))
-    def_bowtie2out = new_file(addext(files_list[0], "bowtie2out.txt"))
-
-    seqtype = guess_seq_filetype(infiles_list[0])
+    seqtype = guess_seq_filetype(files_list[0])
     if seqtype not in ('fasta', 'fastq'):
         raise ValueError("Need sequences in fasta or fastq format")
+
+    def_base = opts.get("output_file") or files_list[0]
+    def_outfile    = new_file(addext(def_base, "metaphlan2"))
+    def_bowtie2out = new_file(addext(def_base, "bowtie2out.txt"))
 
     all_opts = { 'bt2_ps'      : 'very-sensitive',
                  'bowtie2db'   : settings.workflows.metaphlan2.bowtie2db,
@@ -153,7 +153,7 @@ def metaphlan2(files_list, **opts):
 
     all_opts.update(opts)
     
-    cmd = starters.cat(infiles_list, guess_from=infiles_list[0])
+    cmd = starters.cat(files_list, guess_from=files_list[0])
     cmd += (" | metaphlan2.py"
             + " "+dict_to_cmd_opts(all_opts) )
 
@@ -163,7 +163,7 @@ def metaphlan2(files_list, **opts):
 
     return dict(name     = "metaphlan2:"+all_opts['output_file'],
                 actions  = [cmd],
-                file_dep = infiles_list,
+                file_dep = files_list,
                 targets  = targets )
 
 
