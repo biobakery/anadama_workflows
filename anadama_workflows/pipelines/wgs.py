@@ -136,13 +136,17 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
                 yield t
 
         for file_ in self.raw_seq_files:
-            fastq_file = util.new_file( basename(file_)+"_filtered.fastq",
-                                        basedir=self.products_dir )
-            yield general.sequence_convert(
-                [file_], fastq_file, 
-                **self.options.get('sequence_convert', dict())
-            )
+            if util.guess_seq_filetype(file_) != "fastq":
+                fastq_file = util.new_file( basename(file_)+"_filtered.fastq",
+                                            basedir=self.products_dir )
+                yield general.sequence_convert(
+                    [file_], fastq_file, 
+                    **self.options.get('sequence_convert', dict())
+                )
+            else:
+                fastq_file = file_
             self.intermediate_fastq_files.append(fastq_file)
+                
 
         for fastq_file in self.intermediate_fastq_files:
             name_base = os.path.join(self.products_dir,
