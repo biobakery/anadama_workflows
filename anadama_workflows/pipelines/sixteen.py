@@ -17,7 +17,8 @@ from . import (
     infer_pairs,
     split_pairs,
     maybe_convert_to_fastq,
-    _to_merged
+    _to_merged,
+    maybe_decompress
 )
 
 
