@@ -235,3 +235,12 @@ def sequence_pair(seqfname1, seqfname2,
 
 
 
+def cat(input_files, output_file):
+    """Just concatenates files with the ``cat`` command"""
+
+    return {
+        "name": "cat: "+output_file,
+        "actions": ["cat %s > %s" %(" ".join(input_files), output_file)],
+        "file_dep": input_files,
+        "targets": [output_file]
+    }
