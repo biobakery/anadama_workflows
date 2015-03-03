@@ -87,7 +87,7 @@ def humann2(seqfile_in, output_dir, **opts):
 
     default_opts = {
         "input"  : seqfile_in,
-        "output" : os.path.realpath(output_dir),
+        "output" : os.path.abspath(output_dir),
         
         "uniref"             : settings.workflows.humann2.uniref_path,
         "chocophlan"         : settings.workflows.humann2.chocophlan_path,

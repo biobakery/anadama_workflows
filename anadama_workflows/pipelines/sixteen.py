@@ -126,7 +126,7 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
         if not products_dir:
             products_dir = settings.workflows.product_directory
-        self.products_dir = os.path.realpath(products_dir)
+        self.products_dir = os.path.abspath(products_dir)
 
         self.options = self.default_options.copy()
         self.options.update(workflow_options)

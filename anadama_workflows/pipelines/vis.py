@@ -91,7 +91,7 @@ class VisualizationPipeline(Pipeline, SampleMetadataMixin):
 
         if not products_dir:
             products_dir = settings.workflows.product_directory
-        self.products_dir = os.path.realpath(products_dir)
+        self.products_dir = os.path.abspath(products_dir)
                 
 
     def _configure(self):
