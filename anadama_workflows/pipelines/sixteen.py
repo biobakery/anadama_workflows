@@ -3,7 +3,7 @@ import re
 from os.path import join, basename
 from operator import itemgetter
 from collections import Counter
-from itertools import groupby
+from itertools import groupby, izip_longest
 
 from anadama import util
 from anadama.pipelines import Pipeline
@@ -14,9 +14,11 @@ from .. import general, sixteen, biom
 from . import (
     SampleFilterMixin, 
     SampleMetadataMixin, 
-    maybe_stitch, 
-    maybe_decompress,
-    infer_pairs
+    infer_pairs,
+    split_pairs,
+    maybe_convert_to_fastq,
+    _to_merged,
+    maybe_decompress
 )
 
 
@@ -124,7 +126,7 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
         if not products_dir:
             products_dir = settings.workflows.product_directory
-        self.products_dir = os.path.realpath(products_dir)
+        self.products_dir = os.path.abspath(products_dir)
 
         self.options = self.default_options.copy()
         self.options.update(workflow_options)
@@ -278,4 +280,39 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
         return bcode_len
 
 
+
+def maybe_stitch(maybe_pairs, products_dir, 
+                 barcode_files=list(), drop_unpaired=False):
+    pairs, singles = split_pairs(maybe_pairs)
+    tasks = list()
+    barcodes = list()
+
+    if not pairs:
+        return singles, barcode_files, tasks
+
+    for pair, maybe_barcode in izip_longest(pairs, barcode_files):
+        (forward, reverse), maybe_tasks = maybe_convert_to_fastq(
+            pair, products_dir)
+        tasks.extend(maybe_tasks)
+        output = util.new_file( 
+            _to_merged(forward),
+            basedir=products_dir 
+        )
+        singles.append(output)
+        tasks.append( general.fastq_join(forward, reverse, output, 
+                                         {'drop_unpaired': drop_unpaired}) )
+        if maybe_barcode and drop_unpaired:
+            filtered_barcode = util.new_file(
+                util.addtag(maybe_barcode, "filtered"),
+                basedir=products_dir
+            )
+            pairtask = general.sequence_pair(
+                maybe_barcode, output,
+                outfname1=filtered_barcode,
+                options={"inner_join": "right"}
+            )
+            barcodes.append(filtered_barcode)
+            tasks.append(pairtask)
+
+    return singles, barcodes, tasks
 

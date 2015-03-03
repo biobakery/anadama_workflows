@@ -9,7 +9,11 @@ from .. import settings
 from .. import general, wgs, alignment
 
 from . import SampleFilterMixin, SampleMetadataMixin
-from . import maybe_stitch, infer_pairs
+from . import (
+    infer_pairs,
+    split_pairs,
+    _to_merged,
+)
 
 
 class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
@@ -22,18 +26,16 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
     * For each sequence set:
 
-      - Convert, join paired end reads, and concatenate into a single fastq file
-      - Filter sequences for length > 60 bases
+      - Convert sequences and concatenate into a single fastq file
+      - Filter sequences for human contaminants with knead_data
       - Perform taxonomic profiling with metaphlan2
-      - Align the fastq file agains the KEGG proks reduced dataset with
-          bowtie2
-      - Infer pathway, gene lists with HUMAnN
+      - Infer pathway and gene lists with HUMAnN v2
 
 
     Workflows used:
 
     * :py:func:`anadama_workflows.general.sequence_convert`
-    * :py:func:`anadama_workflows.general.fastq_join`
+    * :py:func:`anadama_workflows.wgs.knead_data`
     * :py:func:`anadama_workflows.wgs.metaphlan2`
     * :py:func:`anadama_workflows.wgs.humann2`
 
@@ -94,7 +96,7 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
         if not products_dir:
             products_dir = settings.workflows.product_directory
-        self.products_dir = os.path.realpath(products_dir)
+        self.products_dir = os.path.abspath(products_dir)
 
         self.options = self.default_options.copy()
         self.options.update(workflow_options)
@@ -108,9 +110,9 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
             otu_tables                 = list()
         )
 
-        self.sequence_attrs = (self.raw_seq_files,
-                               self.intermediate_fastq_files,
-                               self.decontaminated_fastq_files)
+        self.sequence_attrs = ("raw_seq_files",
+                               "intermediate_fastq_files",
+                               "decontaminated_fastq_files")
 
         def _default_metadata():
             cls = namedtuple("Sample", ['SampleID'])
@@ -119,23 +121,30 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
 
     def _configure(self):
-        if self.options['infer_pairs'].get('infer'):
-            paired, notpaired = infer_pairs(self.raw_seq_files)
-            self.raw_seq_files = paired + notpaired
+        for attr in self.sequence_attrs:
+            seq_set = getattr(self, attr)
 
-        for seq_set in self.sequence_attrs:
-            seq_set, _, maybe_tasks = maybe_stitch(seq_set, self.products_dir)
+            if self.options['infer_pairs'].get('infer'):
+                paired, notpaired = infer_pairs(seq_set)
+                seq_set = paired + notpaired
+
+            seq_set, maybe_tasks = maybe_concatenate(seq_set, self.products_dir)
+            setattr(self, attr, seq_set)
             for t in maybe_tasks:
                 yield t
 
         for file_ in self.raw_seq_files:
-            fastq_file = util.new_file( basename(file_)+"_filtered.fastq",
-                                        basedir=self.products_dir )
-            yield general.sequence_convert(
-                [file_], fastq_file, 
-                **self.options.get('sequence_convert', dict())
-            )
+            if util.guess_seq_filetype(file_) != "fastq":
+                fastq_file = util.new_file( basename(file_)+"_filtered.fastq",
+                                            basedir=self.products_dir )
+                yield general.sequence_convert(
+                    [file_], fastq_file, 
+                    **self.options.get('sequence_convert', dict())
+                )
+            else:
+                fastq_file = file_
             self.intermediate_fastq_files.append(fastq_file)
+                
 
         for fastq_file in self.intermediate_fastq_files:
             name_base = os.path.join(self.products_dir,
@@ -168,3 +177,26 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
             yield wgs.humann2( d_fastq, humann_output_dir, 
                                **self.options.get('humann', dict()) )
             
+
+
+def maybe_concatenate(maybe_pairs, products_dir):
+    pairs, singles = split_pairs(maybe_pairs)
+    tasks = list()
+
+    if not pairs:
+        return singles, tasks
+
+    for pair in pairs:
+        catted_fname = util.new_file( _to_merged(pair[0], tag="cat"),
+                                      basedir=products_dir )
+
+        simply_cat = any( util.guess_seq_filetype(s) != 'fastq' 
+                          or s.endswith('.bz2') for s in pair )
+        if simply_cat:
+            tasks.append(general.cat(pair, catted_fname))
+        else:
+            tasks.append(general.sequence_convert(pair, catted_fname))
+
+        singles.append(catted_fname)
+
+    return singles, tasks

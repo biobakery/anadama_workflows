@@ -4,7 +4,7 @@ All anadama_workflows pipelines
 
 import re
 import os
-from itertools import dropwhile, chain, izip_longest
+from itertools import dropwhile, chain
 from anadama import util
 
 from .. import general
@@ -113,7 +113,7 @@ def _regex_filter(list_fnames):
     regular expression that searches for R1 or r2 or R2 or r1.
 
     """
-    regex = re.compile(r'[-._ ][rR]([12])[-._ ]')
+    regex = re.compile(r'[-._ ][rR]?([12])[-._ ]')
     one, two, notpairs = list(), list(), list()
 
     matches = zip( list_fnames, map(regex.search, list_fnames))
@@ -130,39 +130,6 @@ def _regex_filter(list_fnames):
 
     return one, two, notpairs
 
-
-def maybe_stitch(maybe_pairs, products_dir, barcode_files=list()):
-    pairs, singles = split_pairs(maybe_pairs)
-    tasks = list()
-    barcodes = list()
-
-    if not pairs:
-        return singles, barcode_files, tasks
-
-    for pair, maybe_barcode in izip_longest(pairs, barcode_files):
-        (forward, reverse), maybe_tasks = maybe_convert_to_fastq(
-            pair, products_dir)
-        tasks.extend(maybe_tasks)
-        output = util.new_file( 
-            _to_merged(forward),
-            basedir=products_dir 
-        )
-        singles.append(output)
-        tasks.append( general.fastq_join(forward, reverse, output) )
-        if maybe_barcode:
-            filtered_barcode = util.new_file(
-                util.addtag(maybe_barcode, "filtered"),
-                basedir=products_dir
-            )
-            pairtask = general.sequence_pair(
-                maybe_barcode, output,
-                outfname1=filtered_barcode,
-                options={"inner_join": "right"}
-            )
-            barcodes.append(filtered_barcode)
-            tasks.append(pairtask)
-
-    return singles, barcodes, tasks
 
 
 def maybe_decompress(raw_seq_files, products_dir):
@@ -198,11 +165,16 @@ def maybe_decompress(raw_seq_files, products_dir):
     return raw_seq_files, tasks
 
 
-def _to_merged(fname_str):
-    fname_str = re.sub(r'(.*)[rR]1(.*)', r'\1merged\2', fname_str)
+def _to_merged(fname_str, tag="merged"):
+    """tag is put into filename for describing what happened to the
+    sequences: `1`merged`` for stitching ``cat`` for concatenation"""
+    fname_str = re.sub(r'(.*[-._ ])[rR]?[12]([-._ ].*)', 
+                       r'\1%s\2'%(tag), fname_str)
     if fname_str.endswith(".gz"):
         fname_str = fname_str[:-3]
-
+    elif fname_str.endswith(".bz2"):
+        fname_str = fname_str[:-4]
+    
     return fname_str
 
 

@@ -102,7 +102,7 @@ def handle_samfile(file_str, filemode="r"):
                              check_header=False, check_sq=False)
     for read in sam_file:
         seq = Seq.Seq(read.seq)
-        qual = [ ord(x)-32 for x in read.qual ]
+        qual = [ ord(x)-33 for x in read.qual ]
         if read.is_reverse:
             seq = seq.reverse_complement()
         yield SeqRecord.SeqRecord(
