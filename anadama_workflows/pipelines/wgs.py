@@ -187,11 +187,12 @@ def maybe_concatenate(maybe_pairs, products_dir):
         return singles, tasks
 
     for pair in pairs:
-        catted_fname = util.new_file( _to_merged(pair[0], tag="cat"),
-                                      basedir=products_dir )
+        catted_fname = util.new_file( 
+            _to_merged(pair[0], tag="cat", strip_ext=False),
+            basedir=products_dir )
 
-        simply_cat = any( util.guess_seq_filetype(s) != 'fastq' 
-                          or s.endswith('.bz2') for s in pair )
+        simply_cat = all( util.guess_seq_filetype(s) in ('fastq' , 'fasta')
+                          for s in pair )
         if simply_cat:
             tasks.append(general.cat(pair, catted_fname))
         else:

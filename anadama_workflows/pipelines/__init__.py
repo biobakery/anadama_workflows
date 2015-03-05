@@ -165,16 +165,15 @@ def maybe_decompress(raw_seq_files, products_dir):
     return raw_seq_files, tasks
 
 
-def _to_merged(fname_str, tag="merged"):
+def _to_merged(fname_str, tag="merged", strip_ext=True):
     """tag is put into filename for describing what happened to the
     sequences: `1`merged`` for stitching ``cat`` for concatenation"""
     fname_str = re.sub(r'(.*[-._ ])[rR]?[12]([-._ ].*)', 
                        r'\1%s\2'%(tag), fname_str)
-    if fname_str.endswith(".gz"):
-        fname_str = fname_str[:-3]
-    elif fname_str.endswith(".bz2"):
-        fname_str = fname_str[:-4]
     
+    if strip_ext and util.is_compressed(fname_str):
+        fname_str = rmext(fname_str)
+
     return fname_str
 
 
