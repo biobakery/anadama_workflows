@@ -193,7 +193,7 @@ def maybe_convert_to_fastq(fnames, products_dir):
     new_fnames, tasks = list(), list()
     for f in fnames:
         guess = util.guess_seq_filetype(f)
-        if guess != "fastq" or f.endswith(".bz2"):
+        if guess != "fastq" or util.is_compressed(f):
             fastq_file = util.new_file(f+".fastq", basedir=products_dir)
             new_fnames.append(fastq_file)
             tasks.append(
@@ -208,3 +208,4 @@ def maybe_convert_to_fastq(fnames, products_dir):
 from .vis import VisualizationPipeline
 from .wgs import WGSPipeline
 from .sixteen import SixteenSPipeline
+from .rna import RNAPipeline

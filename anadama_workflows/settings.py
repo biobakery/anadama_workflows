@@ -21,3 +21,7 @@ class workflows:
 
     class knead:
         reference_db = "/vagrant/scripts/kneaddata/databases/bowtie2/humanGRCh38"
+
+    class subread:
+        index = "/vagrant/data/subread/GRCh38"
+        annotations="/vagrant/data/subread/default_annotations.gtf"
