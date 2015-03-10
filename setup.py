@@ -25,6 +25,7 @@ setup(
             'sequence_sort    = anadama_workflows.utility_scripts.sort:main',
             'sequence_pair    = anadama_workflows.utility_scripts.pair:main',
             'bam_pe_split     = anadama_workflows.utility_scripts.bam_pe_split:main'
+            'sequence_re-pair = anadama_workflows.utility_scripts.re-pair:main'
         ],
     }
 )
