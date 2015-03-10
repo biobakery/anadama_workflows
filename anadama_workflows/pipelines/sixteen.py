@@ -21,6 +21,8 @@ from . import (
     maybe_decompress
 )
 
+firstitem = itemgetter(0)
+
 
 class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
@@ -225,7 +227,6 @@ class SixteenSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
     def split_454_style(self, seqfiles_to_split):
         tasks, demuxed = list(), list()
-        firstitem = itemgetter(0)
         self.sample_metadata = sorted(self.sample_metadata, key=firstitem)
         for sample_id, sample_group in groupby(self.sample_metadata, 
                                                firstitem):
@@ -290,6 +291,8 @@ def maybe_stitch(maybe_pairs, products_dir,
     if not pairs:
         return singles, barcode_files, tasks
 
+    pairs = sorted(pairs, key=firstitem)
+    barcode_files = sorted(barcode_files)
     for pair, maybe_barcode in izip_longest(pairs, barcode_files):
         (forward, reverse), maybe_tasks = maybe_convert_to_fastq(
             pair, products_dir)
@@ -313,6 +316,8 @@ def maybe_stitch(maybe_pairs, products_dir,
             )
             barcodes.append(filtered_barcode)
             tasks.append(pairtask)
+        else:
+            barcodes.append(maybe_barcode)
 
     return singles, barcodes, tasks
 
