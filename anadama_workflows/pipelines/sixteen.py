@@ -302,9 +302,11 @@ def maybe_stitch(maybe_pairs, products_dir,
             basedir=products_dir 
         )
         singles.append(output)
-        tasks.append( general.fastq_join(forward, reverse, output, 
-                                         {'drop_unpaired': drop_unpaired}) )
         if maybe_barcode and drop_unpaired:
+            tasks.append(
+                general.fastq_join(forward, reverse, output, 
+                                   options={'drop_unpaired': drop_unpaired})
+            )
             filtered_barcode = util.new_file(
                 util.addtag(maybe_barcode, "filtered"),
                 basedir=products_dir
@@ -316,7 +318,12 @@ def maybe_stitch(maybe_pairs, products_dir,
             )
             barcodes.append(filtered_barcode)
             tasks.append(pairtask)
-        else:
+        elif maybe_barcode and not drop_unpaired:
+            tasks.append(
+                general.fastq_join(forward, reverse, output,
+                                   maybe_barcode,
+                                   {'drop_unpaired': drop_unpaired})
+            )
             barcodes.append(maybe_barcode)
 
     return singles, barcodes, tasks

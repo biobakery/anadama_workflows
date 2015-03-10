@@ -2,10 +2,8 @@
 
 import sys
 import optparse
-import errno
-from functools import partial
 from pprint import pformat
-from operator import attrgetter
+from itertools import chain, repeat
 
 from Bio import SeqIO
 
@@ -26,27 +24,19 @@ opts_list = [
                          help="Barcode file to match headers"),
 ]
 
-id_ = attrgetter('id')
-
 formats = SeqIO._FormatToWriter.keys()
 HELP += pformat(formats)
 
 class Cache(object):
     def __init__(self, filename, format):
-        self.seqs = SeqIO.parse(filename, format)
-        self._cached = self.seqs.next()
+        self.seqs = chain(SeqIO.parse(filename, format), repeat(None))
+        self.peek = self.seqs.next()
 
-    def _read(self):
-        if not self._cached:
-            try:
-                self._cached = self.seqs.next()
-            except StopIteration:
-                self._cached = None
-        return self._cached
-
-    def remove(self):
-        self._cached = None
-
+    def next(self):
+        ret = self.peek
+        self.peek = self.seqs.next()
+        return ret
+        
 
 class Matcher(object):
     def __init__(self, seq_file_list, format):
@@ -54,12 +44,11 @@ class Matcher(object):
         
     def match(self, sequence):
         for cache in self.caches:
-            s = cache._read()
-            if sequence.id == s.id:
-                cache.remove()
-                return s
+            if sequence.id == cache.peek.id:
+                return cache.next()
 
         raise Exception("Unable to find header %s in reads" %sequence.id)
+
 
 
 def main():
