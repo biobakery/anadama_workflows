@@ -5,7 +5,7 @@ import optparse
 import operator
 from pprint import pformat
 from functools import partial
-from itertools import ifilter
+from itertools import ifilter, imap
 
 try:
     import bz2
@@ -50,7 +50,10 @@ opts_list = [
                          " length that matches this condition, then it's kept."
                          " Otherwise, the sequence is discarded. recognized"
                          " conditions are {}".format(
-                             comparators.keys()))
+                             comparators.keys())),
+    optparse.make_option('-s', '--slice', action="store", type="string", 
+                         dest="slice", default="",
+                         help="Slice sequence from start:end")
 ]
 
 
@@ -84,6 +87,14 @@ def zipcheck():
 def generate_filter(comparison_list):
     comparator_funcs = [ parse_comparison(str_) for str_ in comparison_list ]
     return lambda val: all( f(len(val)) for f in comparator_funcs )
+
+
+def generate_slicer(slice_str):
+    if slice_str:
+        start, stop = map(int, slice_str.split(":"))
+        return lambda val: val[start:stop]
+    else:
+        return lambda val: val
 
 
 def my_open(f, *args, **kwargs):
@@ -150,6 +161,7 @@ def convert(*input_files, **opts):
     to_format = opts["to"]
     revcomp = opts["revcomp"]
     filter_func = opts['filter_']
+    slice_ = opts['slice_']
 
     for in_file in input_files:
         logging.debug("Converting %s from %s to %s", 
@@ -157,6 +169,7 @@ def convert(*input_files, **opts):
         sequences = formats[from_format](in_file)
         sequences = maybe_reverse_complement(sequences, revcomp)
         sequences = ifilter(filter_func, sequences)
+        sequences = imap(slice_, sequences)
         for i, inseq in enumerate(sequences):
             SeqIO.write(inseq, sys.stdout, to_format)
 
@@ -183,10 +196,11 @@ def main():
 
     try:
         convert(*input_files, 
-                format=opts.from_format, 
-                to=opts.to_format,
-                revcomp=opts.revcomp,
-                filter_=generate_filter(lenfilters))
+                 format=opts.from_format, 
+                 to=opts.to_format,
+                 revcomp=opts.revcomp,
+                 filter_=generate_filter(lenfilters),
+                 slice_=generate_slicer(opts.slice))
     except IOError as e:
         if e.errno == 32:
             # That's the error for a broken pipe this usually happens
