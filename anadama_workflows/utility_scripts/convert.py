@@ -160,21 +160,24 @@ def convert(*input_files, **opts):
     from_format = opts["format"]
     to_format = opts["to"]
     revcomp = opts["revcomp"]
-    filter_func = opts['filter_']
-    slice_ = opts['slice_']
+    filters = opts['filters']
+    slicer = opts['slicer']
 
     for in_file in input_files:
         logging.debug("Converting %s from %s to %s", 
                       in_file, from_format, to_format)
         sequences = formats[from_format](in_file)
-        sequences = maybe_reverse_complement(sequences, revcomp)
-        sequences = ifilter(filter_func, sequences)
-        sequences = imap(slice_, sequences)
+        if revcomp:
+            sequences = maybe_reverse_complement(sequences, revcomp)
+        if filters:
+            sequences = ifilter(generate_filter(filters), sequences)
+        if slicer:
+            sequences = imap(generate_slicer(slicer), sequences)
         for i, inseq in enumerate(sequences):
             SeqIO.write(inseq, sys.stdout, to_format)
 
             if logging.getLogger().isEnabledFor(logging.DEBUG):
-                if i % 250 == 0 and i != 0:
+                if i % 5000 == 0 and i != 0:
                     logging.debug("Converted %d records", i)
 
 def main():
@@ -199,8 +202,8 @@ def main():
                  format=opts.from_format, 
                  to=opts.to_format,
                  revcomp=opts.revcomp,
-                 filter_=generate_filter(lenfilters),
-                 slice_=generate_slicer(opts.slice))
+                 filters=lenfilters,
+                 slicer=opts.slice)
     except IOError as e:
         if e.errno == 32:
             # That's the error for a broken pipe this usually happens

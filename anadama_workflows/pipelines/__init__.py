@@ -165,16 +165,15 @@ def maybe_decompress(raw_seq_files, products_dir):
     return raw_seq_files, tasks
 
 
-def _to_merged(fname_str, tag="merged"):
+def _to_merged(fname_str, tag="merged", strip_ext=True):
     """tag is put into filename for describing what happened to the
     sequences: `1`merged`` for stitching ``cat`` for concatenation"""
     fname_str = re.sub(r'(.*[-._ ])[rR]?[12]([-._ ].*)', 
                        r'\1%s\2'%(tag), fname_str)
-    if fname_str.endswith(".gz"):
-        fname_str = fname_str[:-3]
-    elif fname_str.endswith(".bz2"):
-        fname_str = fname_str[:-4]
     
+    if strip_ext and util.is_compressed(fname_str):
+        fname_str = rmext(fname_str)
+
     return fname_str
 
 
@@ -194,7 +193,7 @@ def maybe_convert_to_fastq(fnames, products_dir):
     new_fnames, tasks = list(), list()
     for f in fnames:
         guess = util.guess_seq_filetype(f)
-        if guess != "fastq" or f.endswith(".bz2"):
+        if guess != "fastq" or util.is_compressed(f):
             fastq_file = util.new_file(f+".fastq", basedir=products_dir)
             new_fnames.append(fastq_file)
             tasks.append(
@@ -209,3 +208,4 @@ def maybe_convert_to_fastq(fnames, products_dir):
 from .vis import VisualizationPipeline
 from .wgs import WGSPipeline
 from .sixteen import SixteenSPipeline
+from .rna import RNAPipeline

@@ -152,7 +152,8 @@ def sequence_convert(files_list, output_file=None,
 
 @requires(binaries=['fastq-join'],
           version_methods=["md5sum `which fastq-join` | awk '{print $1;}'"])
-def fastq_join(forward_fname, reverse_fname, output_file, options=dict()):
+def fastq_join(forward_fname, reverse_fname, output_file,
+               reorder_to=None, options=dict()):
     """Workflow function for joining (aka stitching) paired-end fastq
     files with ea-utils' ``fastq-join``. If the ``drop_unpaired``
     option is set to True, unpaired forward reads are concatenated to
@@ -163,6 +164,8 @@ def fastq_join(forward_fname, reverse_fname, output_file, options=dict()):
     :param reverse_fname: String; file name for the reverse reads.
 
     :param output_file: String; file name for the the finished, joined reads.
+   
+    :param reorder_to: String; file name to reorder sequences against
 
     :param options: Dictionary; interpreted as command line options to
     be passed to the wrapped knead_data.py script.  No - or -- flags
@@ -190,12 +193,15 @@ def fastq_join(forward_fname, reverse_fname, output_file, options=dict()):
         renamed_output = output_file.replace("%", "join")
     else:
         renamed_output = output_file+"join"
-    rename_cmd = "mv %s %s"%( renamed_output, output_file)
 
-    actions = [cmd, rename_cmd]
-    if not drop_unpaired:
+    actions = [cmd]
+    if not drop_unpaired and reorder_to:
         unpaired_forward = renamed_output.replace("join", "un1")
-        actions.append( "cat %s >> %s"%(unpaired_forward, output_file) )
+        actions.append( "sequence_re-pair -f fastq -t fastq -b %s %s %s > %s"%(
+            reorder_to, renamed_output, unpaired_forward, output_file) )
+    else:
+        actions.append("mv %s %s"%(renamed_output, output_file))
+
 
     return {
         "name": "fastq_join: %s..."%(output_file),
