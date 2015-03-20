@@ -21,6 +21,7 @@ class workflows:
 
     class knead:
         reference_db = "/vagrant/scripts/kneaddata/databases/bowtie2/humanGRCh38"
+        trim_path = "/vagrant/scripts/Trimmomatic-0.33/trimmomatic-0.33.jar"
 
     class subread:
         index = "/vagrant/data/subread/GRCh38"

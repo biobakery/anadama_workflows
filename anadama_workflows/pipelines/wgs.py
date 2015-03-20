@@ -151,8 +151,8 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
                                      basename(fastq_file))
             name_base = util.rmext(name_base)
             task_dict = wgs.knead_data([fastq_file], name_base).next()
-            decontaminated_fastq = task_dict['targets'][0]
-            self.decontaminated_fastq_files.append(decontaminated_fastq)
+            decontaminated_fastq = first_half(task_dict['targets'])
+            self.decontaminated_fastq_files.extend(decontaminated_fastq)
             yield task_dict
 
         for d_fastq in self.decontaminated_fastq_files:
@@ -201,3 +201,8 @@ def maybe_concatenate(maybe_pairs, products_dir):
         singles.append(catted_fname)
 
     return singles, tasks
+
+
+def first_half(list_):
+    n = len(list_)
+    return list_[:n/2]
