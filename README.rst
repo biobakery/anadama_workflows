@@ -27,6 +27,22 @@ One liner::
   $ pip install -e 'git+https://bitbucket.org/biobakery/anadama_workflows.git@master#egg=anadama_workflows-0.0.1'
 
 
+Documentation
+============
+
+Head on over to the docs_ site.
+
+.. _docs: http://rschwager-hsph.bitbucket.org/documentation/anadama-workflows/index.html
+
+
+How to get help
+============
+
+Submit an issue_.
+
+.. _issue: https://bitbucket.org/biobakery/anadama_workflows/issues
+
+
 Workflows
 =========
 
@@ -123,4 +139,3 @@ subclass of `anadama.pipelines.Pipeline`_.
 
 Read the ``anadama`` source for development guidelines and the
 ``anadama_workflows`` source for examples.
-
