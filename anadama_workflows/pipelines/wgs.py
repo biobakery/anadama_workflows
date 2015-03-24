@@ -116,7 +116,8 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
         def _default_metadata():
             cls = namedtuple("Sample", ['SampleID'])
-            return [ cls(basename(f)) for f in raw_seq_files ]
+            return [ cls(basename(util.rmext(f, all=True)))
+                     for f in raw_seq_files ]
         self._unpack_metadata(default = _default_metadata)
 
 
@@ -149,7 +150,7 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
         for fastq_file in self.intermediate_fastq_files:
             name_base = os.path.join(self.products_dir,
                                      basename(fastq_file))
-            name_base = util.rmext(name_base)
+            name_base = util.rmext(name_base, all=True)
             task_dict = wgs.knead_data([fastq_file], name_base).next()
             decontaminated_fastq = first_half(task_dict['targets'])
             self.decontaminated_fastq_files.extend(decontaminated_fastq)
@@ -160,6 +161,7 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
                 basename(d_fastq)+".metaphlan2.pcl",
                 basedir=self.products_dir )
             otu_table = metaphlan_file.replace('.pcl', '.biom')
+            import pdb; pdb.set_trace()
             yield wgs.metaphlan2(
                 [d_fastq], output_file=metaphlan_file,
                 biom=otu_table,
