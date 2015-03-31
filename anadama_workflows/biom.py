@@ -1,5 +1,7 @@
+
+from doit.action import CmdAction
+
 from anadama.decorators import requires
-from anadama.action import CmdAction
 import os
 from . import (
     settings

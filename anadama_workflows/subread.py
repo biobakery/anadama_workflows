@@ -1,8 +1,9 @@
 import os
 
+from doit.action import CmdAction
+
 from anadama.util import dict_to_cmd_opts
 from anadama.decorators import requires
-from anadama.action import CmdAction
 
 from anadama_workflows import settings
 

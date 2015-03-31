@@ -1,7 +1,8 @@
 import os
 
+from doit.action import CmdAction
+
 from anadama import strategies
-from anadama.action import CmdAction
 from anadama.decorators import requires
 
 

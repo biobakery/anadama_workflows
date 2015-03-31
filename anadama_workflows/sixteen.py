@@ -5,8 +5,8 @@ import operator
 import itertools
 from os.path import join
 
+from doit.action import CmdAction, PythonAction
 
-from anadama.action import CmdAction, PythonAction
 from anadama.decorators import requires
 from anadama import strategies
 

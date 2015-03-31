@@ -1,7 +1,8 @@
 import os
 import re
 
-from anadama.action import CmdAction
+from doit.action import CmdAction
+
 from anadama.decorators import requires
 from anadama.util import addtag, dict_to_cmd_opts
 
