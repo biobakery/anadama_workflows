@@ -161,7 +161,6 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
                 basename(d_fastq)+".metaphlan2.pcl",
                 basedir=self.products_dir )
             otu_table = metaphlan_file.replace('.pcl', '.biom')
-            import pdb; pdb.set_trace()
             yield wgs.metaphlan2(
                 [d_fastq], output_file=metaphlan_file,
                 biom=otu_table,
