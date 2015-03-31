@@ -16,7 +16,7 @@ class workflows:
         uniref_path = install_dir+"/uniref/"
         chocophlan_path = install_dir+"/chocophlan/"
         _pathway_dir = install_dir+"/pathways"
-        pathways_databases = (_pathway_dir+"/metacyc_reactions.uniref "+
+        pathways_databases = (_pathway_dir+"/metacyc_reactions.uniref,"+
                               _pathway_dir+"/metacyc_pathways")
 
     class knead:

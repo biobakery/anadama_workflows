@@ -91,16 +91,16 @@ def humann2(seqfile_in, output_dir, **opts):
         
         "uniref"             : settings.workflows.humann2.uniref_path,
         "chocophlan"         : settings.workflows.humann2.chocophlan_path,
-        "pathways_databases" : settings.workflows.humann2.pathways_databases,
-        "o_log"              : os.path.join(output_dir, "humann2_log.txt"),
-        "output_format"      : "tsv"
+        "pathways-database"  : settings.workflows.humann2.pathways_databases,
+        "o-log"              : os.path.join(output_dir, "humann2_log.txt"),
+        "output-format"      : "tsv"
     }
     default_opts.update(opts)
     opts_str = dict_to_cmd_opts(default_opts, sep=" ")
 
-    cmd = "humann2.py " + opts_str
+    cmd = "humann2 " + opts_str
 
-    suffix = default_opts['output_format']
+    suffix = default_opts['output-format']
     def _join(s):
         file, ext = os.path.splitext(seqfile_in)
         file = file + '.' + suffix
