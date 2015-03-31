@@ -116,7 +116,8 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
         def _default_metadata():
             cls = namedtuple("Sample", ['SampleID'])
-            return [ cls(basename(f)) for f in raw_seq_files ]
+            return [ cls(basename(util.rmext(f, all=True)))
+                     for f in raw_seq_files ]
         self._unpack_metadata(default = _default_metadata)
 
 
@@ -149,10 +150,10 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
         for fastq_file in self.intermediate_fastq_files:
             name_base = os.path.join(self.products_dir,
                                      basename(fastq_file))
-            name_base = util.rmext(name_base)
+            name_base = util.rmext(name_base, all=True)
             task_dict = wgs.knead_data([fastq_file], name_base).next()
-            decontaminated_fastq = task_dict['targets'][0]
-            self.decontaminated_fastq_files.append(decontaminated_fastq)
+            decontaminated_fastq = first_half(task_dict['targets'])
+            self.decontaminated_fastq_files.extend(decontaminated_fastq)
             yield task_dict
 
         for d_fastq in self.decontaminated_fastq_files:
@@ -201,3 +202,8 @@ def maybe_concatenate(maybe_pairs, products_dir):
         singles.append(catted_fname)
 
     return singles, tasks
+
+
+def first_half(list_):
+    n = len(list_)
+    return list_[:n/2]

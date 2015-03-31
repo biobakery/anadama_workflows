@@ -21,3 +21,8 @@ class workflows:
 
     class knead:
         reference_db = "/net/hutlab11/srv/export/hutlab11/share_root/databases/bowtie2/humanGRCh38"
+        trim_path = "/net/hutlab11/srv/export/hutlab11/share_root/databases/Trimmomatic-0.33/trimmomatic-0.33.jar"
+
+    class subread:
+        index = "/vagrant/data/subread/GRCh38"
+        annotations="/vagrant/data/subread/default_annotations.gtf"

@@ -202,15 +202,17 @@ def knead_data(infiles, output_basestr, **opts):
     default_opts = {
         "output-prefix": output_basestr,
         "reference-db": settings.workflows.knead.reference_db,
+        "trim-path": settings.workflows.knead.trim_path,
+        "trim-args": "'LEADING:3 TRAILING:3'"
     }
     default_opts.update(opts)
     
     db_base = os.path.basename(settings.workflows.knead.reference_db)
-    def _targ(num_tag=None):
+    def _targ(status_tag, num_tag=None):
         if num_tag:
-            base = "_".join([output_basestr, db_base, "clean", num_tag])
+            base = "_".join([output_basestr, db_base, status_tag, num_tag])
         else:
-            base = "_".join([output_basestr, db_base, "clean"])
+            base = "_".join([output_basestr, db_base, status_tag])
         return base+".fastq"
 
     infiles_list = list(infiles)
@@ -218,10 +220,11 @@ def knead_data(infiles, output_basestr, **opts):
         one, two = infiles_list
         default_opts['1'] = one
         default_opts['2'] = two
-        targets = [ _targ("1"), _targ("2") ]
+        targets = [ _targ("clean", "1"), _targ("clean", "2"),
+                    _targ("contam", "1"), _targ("contam", "2") ]
     else:
         default_opts['1'] = infiles_list[0]
-        targets = [ _targ() ]
+        targets = [ _targ("clean"), _targ("contam") ]
 
     cmd = "knead_data.py " + dict_to_cmd_opts(default_opts)
 
