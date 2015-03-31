@@ -158,9 +158,9 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
         for d_fastq in self.decontaminated_fastq_files:
             metaphlan_file = util.new_file(
-                basename(d_fastq)+".metaphlan2.pcl",
+                basename(d_fastq)+".metaphlan2.tsv",
                 basedir=self.products_dir )
-            otu_table = metaphlan_file.replace('.pcl', '.biom')
+            otu_table = metaphlan_file.replace('.tsv', '.biom')
             yield wgs.metaphlan2(
                 [d_fastq], output_file=metaphlan_file,
                 biom=otu_table,
