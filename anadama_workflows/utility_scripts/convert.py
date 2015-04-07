@@ -53,7 +53,10 @@ opts_list = [
                              comparators.keys())),
     optparse.make_option('-s', '--slice', action="store", type="string", 
                          dest="slice", default="",
-                         help="Slice sequence from start:end")
+                         help="Slice sequence from start:end"),
+    optparse.make_option('-m', '--mangle_name', action="store", type="string", 
+                         dest="mangle_name", default="",
+                         help="Rename sequences with this base string")
 ]
 
 
@@ -95,6 +98,14 @@ def generate_slicer(slice_str):
         return lambda val: val[start:stop]
     else:
         return lambda val: val
+
+
+def generate_mangler(basestr):
+    def mangler(seqs):
+        for i, seq in enumerate(seqs):
+            seq.id = basestr+"_"+str(i)
+            yield seq
+    return mangler
 
 
 def my_open(f, *args, **kwargs):
@@ -162,7 +173,15 @@ def convert(*input_files, **opts):
     revcomp = opts["revcomp"]
     filters = opts['filters']
     slicer = opts['slicer']
+    mangler_base = opts['mangler_base']
 
+    if logging.getLogger().isEnabledFor(logging.DEBUG):
+        def log(i):
+            if i % 10000 == 0 and i != 0:
+                logging.debug("Converted %d records", i)
+    else:
+        log = lambda i: None
+        
     for in_file in input_files:
         logging.debug("Converting %s from %s to %s", 
                       in_file, from_format, to_format)
@@ -173,12 +192,13 @@ def convert(*input_files, **opts):
             sequences = ifilter(generate_filter(filters), sequences)
         if slicer:
             sequences = imap(generate_slicer(slicer), sequences)
+        if mangler_base:
+            mangler = generate_mangler(mangler_base)
+            sequences = mangler(sequences)
         for i, inseq in enumerate(sequences):
             SeqIO.write(inseq, sys.stdout, to_format)
+            log(i)
 
-            if logging.getLogger().isEnabledFor(logging.DEBUG):
-                if i % 5000 == 0 and i != 0:
-                    logging.debug("Converted %d records", i)
 
 def main():
     (opts, input_files) = handle_cli()
@@ -203,7 +223,8 @@ def main():
                  to=opts.to_format,
                  revcomp=opts.revcomp,
                  filters=lenfilters,
-                 slicer=opts.slice)
+                 slicer=opts.slice,
+                 mangler_base=opts.mangle_name)
     except IOError as e:
         if e.errno == 32:
             # That's the error for a broken pipe this usually happens
