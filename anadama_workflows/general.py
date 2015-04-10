@@ -39,10 +39,10 @@ def extract(fname_from, fname_to=None):
 
     _, min_file_type = mimetypes.guess_type(fname_from)
     if min_file_type == 'gzip':
-        task['actions'] = [ "gzip -d <"+fname_from+" > "+target ]
+        task['actions'] = [ "gzip -d < "+fname_from+" > "+target ]
         return task
     elif min_file_type == 'bzip2':
-        task['actions'] = [ "gzip -d <"+fname_from+" > "+target ]
+        task['actions'] = [ "bzip2 -d < "+fname_from+" > "+target ]
         return task
     else:
         return None
@@ -98,7 +98,8 @@ def fastq_split(files_list, fasta_fname, qual_fname,
           version_methods=["pip freeze | grep anadama_workflows"])
 def sequence_convert(files_list, output_file=None,
                      reverse_complement=False, from_format=None,
-                     format_to="fastq", lenfilters_list=list()):
+                     format_to="fastq", lenfilters_list=list(),
+                     mangle=None):
     """ Workflow for converting between sequence file formats.
 
     :param files_list: List; List of input files
@@ -115,6 +116,7 @@ def sequence_convert(files_list, output_file=None,
     :keyword lenfilters_list: List of strings; conditions for filtering 
                               sequences by length.  To keep all sequences 
                               longer than 60 chars, for example, use >60.
+    :keyword mangle: String; Rename all sequences according to this base string.
 
     External dependencies:
       - sequence_convert: python script that should come pre-installed with
@@ -138,6 +140,8 @@ def sequence_convert(files_list, output_file=None,
 
     if reverse_complement:
         cmd += " --reverse_complement"
+    if mangle:
+        cmd += " -m "+mangle
 
     cmd += ( " "+" ".join(files_list)
              + " > "+output_file)
