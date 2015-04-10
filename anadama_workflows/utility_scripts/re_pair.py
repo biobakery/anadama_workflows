@@ -4,6 +4,7 @@ import sys
 import optparse
 from pprint import pformat
 from itertools import chain, repeat
+from collections import namedtuple
 
 from Bio import SeqIO
 
@@ -27,9 +28,11 @@ opts_list = [
 formats = SeqIO._FormatToWriter.keys()
 HELP += pformat(formats)
 
+nullobject = namedtuple("null", "id")(id=None)
+
 class Cache(object):
     def __init__(self, filename, format):
-        self.seqs = chain(SeqIO.parse(filename, format), repeat(None))
+        self.seqs = chain(SeqIO.parse(filename, format), repeat(nullobject))
         self.peek = self.seqs.next()
 
     def next(self):
