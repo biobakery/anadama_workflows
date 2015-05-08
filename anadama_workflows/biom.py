@@ -30,7 +30,8 @@ def to_tsv(infile, outfile):
 
     def run():
         if os.stat(infile).st_size > 1:
-            return CmdAction(cmd.format(infile=infile, outfile=outfile), verbose=verbose).execute()
+            return CmdAction(cmd.format(infile=infile, outfile=outfile),
+                             verbose=verbose).execute()
         else:
             open(outfile, 'w').close()
 
