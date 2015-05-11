@@ -66,6 +66,8 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
                  raw_seq_files=list(), 
                  intermediate_fastq_files=list(),
                  decontaminated_fastq_files=list(),
+                 metaphlan_results=None,
+                 otu_tables=None,
                  products_dir=str(),
                  workflow_options=dict(),
                  *args, **kwargs):
