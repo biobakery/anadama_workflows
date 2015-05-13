@@ -1,5 +1,5 @@
 class workflows:
-    product_directory = "mibc_products"
+    product_directory = "anadama_products"
     verbose           = True
 
     class metaphlan2:
@@ -11,14 +11,6 @@ class workflows:
     class alignment:
         kegg_bowtie2_db = "/vagrant/data/ccfa/ccfa/KEGG_reduced_bowtie2/KEGG_1"
                                              
-    class humann2:
-        install_dir = "/vagrant/scripts/humann2/"
-        uniref_path = install_dir+"/uniref/"
-        chocophlan_path = install_dir+"/chocophlan/"
-        _pathway_dir = install_dir+"/pathways"
-        pathways_databases = (_pathway_dir+"/metacyc_reactions.uniref,"+
-                              _pathway_dir+"/metacyc_pathways")
-
     class knead:
         reference_db = "/vagrant/scripts/kneaddata/databases/bowtie2/humanGRCh38"
         trim_path = "/vagrant/scripts/Trimmomatic-0.33/trimmomatic-0.33.jar"

@@ -56,8 +56,8 @@ def humann(infiles_list, workdir):
     }
         
 
-@requires(binaries=['humann2.py'],
-          version_methods=['pip freeze | grep humann2lib'])
+@requires(binaries=['humann2'],
+          version_methods=['humann2 --version'])
 def humann2(seqfile_in, output_dir, **opts):
     """Workflow to find pathway and gene lists grouped by organism from
     raw whole genome shotgun reads.
@@ -75,13 +75,13 @@ def humann2(seqfile_in, output_dir, **opts):
 
     External dependencies:
 
-      - `HUMAnN2 <https://bitbucket.org/biobakery/humann2>`_
+      - `HUMAnN2 v0.1.9 <https://bitbucket.org/biobakery/humann2>`_
 
 
     Resource utilization: 
 
       - Ram: 4-6G
-      - Time: 50 hrs (fifty)
+      - Time: 1 hr
 
     """
 
@@ -89,10 +89,10 @@ def humann2(seqfile_in, output_dir, **opts):
         "input"  : seqfile_in,
         "output" : os.path.abspath(output_dir),
         
-        "uniref"             : settings.workflows.humann2.uniref_path,
-        "chocophlan"         : settings.workflows.humann2.chocophlan_path,
-        "pathways-database"  : settings.workflows.humann2.pathways_databases,
         "o-log"              : os.path.join(output_dir, "humann2_log.txt"),
+        "memory-use"         : "minimum",
+        "log-level"          : "INFO",
+        "remove-temp-output" : "",
         "output-format"      : "tsv"
     }
     default_opts.update(opts)
