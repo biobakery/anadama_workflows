@@ -62,8 +62,8 @@ def write_map(sample_group, sample_dir):
     }
 
 
-@requires(binaries=['qiime_cmd'],
-          version_methods=["qiime_cmd print_qiime_config.py "
+@requires(binaries=['split_libraries.py'],
+          version_methods=[" print_qiime_config.py "
                            "| awk '/QIIME library version/{print $NF;}'"])
 def demultiplex(map_fname, fasta_fname, qual_fname, output_fname,
                 qiime_opts={}):
@@ -88,7 +88,7 @@ def demultiplex(map_fname, fasta_fname, qual_fname, output_fname,
                          of { "my-option": "" }.
 
     External dependencies:
-      - Qiime 1.8.0: https://github.com/qiime/qiime-deploy
+      - Qiime 1.8.0: https://github.com/qiime/qiime
 
     """
     
@@ -96,7 +96,7 @@ def demultiplex(map_fname, fasta_fname, qual_fname, output_fname,
     output_dir=os.path.dirname(output_fname)
     opts = dict_to_cmd_opts(qiime_opts)
     
-    cmd = ("qiime_cmd split_libraries.py"+
+    cmd = ("split_libraries.py"+
            " --map="+map_fname+
            " --fasta="+fasta_fname+
            " --qual="+qual_fname+
@@ -111,8 +111,8 @@ def demultiplex(map_fname, fasta_fname, qual_fname, output_fname,
     }
 
 
-@requires(binaries=['qiime_cmd'],
-          version_methods=["qiime_cmd print_qiime_config.py "
+@requires(binaries=['split_libraries_fastq.py'],
+          version_methods=["print_qiime_config.py "
                            "| awk '/QIIME library version/{print $NF;}'"])
 def demultiplex_illumina(fastq_fnames, barcode_fnames, map_fname, output_fname,
                          verbose=True, qiime_opts={}):
@@ -127,7 +127,7 @@ def demultiplex_illumina(fastq_fnames, barcode_fnames, map_fname, output_fname,
     default_opts.update(qiime_opts)
     opts = dict_to_cmd_opts(default_opts)
     
-    cmd = "qiime_cmd split_libraries_fastq.py "
+    cmd = "split_libraries_fastq.py "
 
     revcomp_map_fname = new_file(addtag(map_fname, "revcomp"),
                                  basedir=output_dir)
@@ -168,7 +168,7 @@ def demultiplex_illumina(fastq_fnames, barcode_fnames, map_fname, output_fname,
 
 
 
-@requires(binaries=['qiime_cmd', 'sequence_convert'])
+@requires(binaries=['pick_closed_reference_otus.py', 'sequence_convert'])
 def pick_otus_closed_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
     """Workflow to perform OTU picking, generates a biom-formatted OTU
     table from demultiplexed 16S reads. This workflow (in general
@@ -214,7 +214,7 @@ def pick_otus_closed_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
     default_opts.update(qiime_opts)
     opts = dict_to_cmd_opts(default_opts)
 
-    cmd = ("qiime_cmd pick_closed_reference_otus.py"+
+    cmd = ("pick_closed_reference_otus.py"+
            " --input_fp={}"+
            " --output_dir="+output_dir+
            " -f"+
@@ -247,7 +247,7 @@ def pick_otus_closed_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
     }
 
 
-@requires(binaries=['qiime_cmd', 'sequence_convert'])
+@requires(binaries=['pick_open_reference_otus.py', 'sequence_convert'])
 def pick_otus_open_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
     """Workflow to perform open-reference OTU picking. Similar to
     closed-reference OTU picking, this workflow generates a
@@ -293,7 +293,7 @@ def pick_otus_open_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
     default_opts.update(qiime_opts)
     opts = dict_to_cmd_opts(default_opts)
 
-    cmd = ("qiime_cmd pick_open_reference_otus.py"+
+    cmd = (" pick_open_reference_otus.py"+
            " --input_fp={}"+
            " --output_dir="+output_dir+
            " -f"+
@@ -326,7 +326,7 @@ def pick_otus_open_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
     }
 
 
-@requires(binaries=['qiime_cmd'])
+@requires(binaries=['merge_otu_tables.py'])
 def merge_otu_tables(files_list, name):
     """Workflow to merge OTU tables into a single OTU table. Also accepts
     biom-formatted OTU tables. This workflow will skip otu tables with
@@ -344,7 +344,7 @@ def merge_otu_tables(files_list, name):
     def merge_filter(deps,targets):
         files = [file for file in deps
                  if os.path.exists(file) and os.stat(file).st_size > 0] 
-        cmd = "qiime_cmd merge_otu_tables.py -i {filenames} -o {output}"
+        cmd = "merge_otu_tables.py -i {filenames} -o {output}"
         cmd = cmd.format( filenames = ",".join(files), 
                           output    = name  )
         return CmdAction(cmd, verbose=True).execute()
@@ -357,8 +357,9 @@ def merge_otu_tables(files_list, name):
     }
 
 
-@requires(binaries=['picrust_cmd', 'biom'],
-          version_methods=["picrust_cmd print_picrust_config.py "
+@requires(binaries=['normalize_by_copy_number.py', 'predict_metagenomes.py',
+                    'biom'],
+          version_methods=["print_picrust_config.py "
                            "| awk '/PICRUSt version/{print $NF;}'"])
 def picrust(file, output_dir=None, verbose=True, **opts):
     """Workflow to predict metagenome functional content from 16S OTU tables.
@@ -390,7 +391,7 @@ def picrust(file, output_dir=None, verbose=True, **opts):
                  'with_confidence' : 0,  'custom'  : '' }
     all_opts.update(opts)
 
-    cmd1 = ("picrust_cmd normalize_by_copy_number.py "
+    cmd1 = ("normalize_by_copy_number.py "
             + "-i %s"
             + " -o " + norm_out)
     if all_opts['gg_version']:
@@ -398,7 +399,7 @@ def picrust(file, output_dir=None, verbose=True, **opts):
     if all_opts['tab_in']:
         cmd1 += " -f"
 
-    cmd2 = ("picrust_cmd predict_metagenomes.py "
+    cmd2 = ("predict_metagenomes.py "
             + "-i %s"
             + " -o " + predict_out)
     if all_opts['gg_version']:
