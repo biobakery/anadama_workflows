@@ -101,10 +101,37 @@ And now we do KNEAD_data::
   download_unpack https://bitbucket.org/biobakery/kneaddata/get/v0.3.tar.gz
   pip install -e biobakery-kneaddata-*/
 
-Next, we'll need Breadcrumbs::
+  wget -O trimmomatic.zip 'http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.33.zip'
+  unzip trimmomatic.zip
+
+  # Go download jre1.7 from http://www.oracle.com/technetwork/java/javase/downloads/jre7-downloads-1880261.html
+  tar -xvzf jre-7u80-linux-x64.gz
+  link jre1.7.0_80/bin/java
+
+  # And we'll also need a human reference database
+  mkdir -pv ~/anadama_dev/databases/bowtie2
+  cd !$
+  download_unpack 'ftp://ftp.ncbi.nlm.nih.gov/genbank/genomes/Eukaryotes/vertebrates_mammals/Homo_sapiens/GRCh38/seqs_for_alignment_pipelines/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.bowtie_index.tar.gz'
+  for file in *; do mv -iv $file $( echo "$file" | sed -e 's|GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.bowtie_index|humanGRCh38|g' ); done
+
+
+Next, we'll need Breadcrumbs. Breadcrumbs requires python packages
+(like numpy) that have conflicting versions with some other packages
+we will install later (qiime). We'll get around this problem by using
+a script called ``docent``. We first install docent, then we install
+qiime::
+
+  download_unpack https://bitbucket.org/biobakery/docent/get/HEAD.tgz
+  pip install -e biobakery-docent-*/
   
   download_unpack https://bitbucket.org/biobakery/breadcrumbs/get/ed59079c2e5e.tgz
-  pip install -e biobakery-breadcrumbs-*/
+  docent -e  ~/anadama_env/src/biobakery-breadcrumbs-ed59079c2e5e/env -v \
+      -i '-e "~/anadama_dev/src/biobakery-breadcrumbs-ed59079c2e5e"' \
+      -o bin/scriptConvertBetweenBIOMAndPCL.py \
+      -o bin/scriptEnvToTable.py \
+      -o bin/scriptManipulateTable.py \
+      -o bin/scriptPcoa.py \
+      -o bin/scriptPlotFeature.py
 
 
 That's all for the WGS Pipeline.
@@ -125,14 +152,12 @@ First up is ea-utils::
   link fastq-join
   cd -
 
-Now we install qiime. Qiime requires python packages (like numpy) that
-have conflicting versions with some other packages we recently
-installed (breadcrumbs). We'll get around this problem by using a
-script called ``docent``. We first install docent, then we install
-qiime::
+And Biom-format::
 
-  download_unpack https://bitbucket.org/biobakery/docent/get/HEAD.tgz
-  pip install -e biobakery-docent-*/
+  pip install biom-format==1.3.1
+
+
+Now we install qiime. Again using docent to 'quarantine' dependencies::
 
   download_unpack 'https://github.com/biocore/qiime/archive/1.8.0.tar.gz'
   cd ~/anadama_env
@@ -167,6 +192,49 @@ Finally, install picrust::
 .. _setuptools: https://pypi.python.org/pypi/setuptools
 .. _python2: https://www.python.org/downloads/
 .. _virtualenv: https://pypi.python.org/pypi/virtualenv
+
+
+Editing the anadama_workflows settings.py file
+______________________________________________
+
+Change the file locations to where you've installed them. Like so::
+
+  # edit ~/anadama_env/src/anadama-workflows/anadama_workflows/settings.py
+
+  class metaphlan2:
+      bowtie2db = "/home/user/anadama_env/bin/db_v20/mpa_v20_m200"
+      mpa_pkl   = "/home/user/anadama_env/bin/db_v20/mpa_v20_m200.pkl"
+  class sixteen:
+      otu_taxonomy = "/home/user/anadama_env/databases/gg_13_5_otus/taxonomy/97_otu_taxonomy.txt"
+      otu_refseq   = "/home/user/anadama_env/databases/gg_13_5_otus/rep_set/97_otus.fasta"
+
+  class knead:
+      reference_db = "/home/user/anadama_env/databases/bowtie2/humanGRCh38"
+      trim_path = "/home/user/anadama_env/src/Trimmomatic-0.33/trimmomatic-0.33.jar"
+
+
+
+
+
+Tricks for Debian 8
+___________________
+
+You'll need to install a few packages::
+
+  sudo apt-get update
+  sudo apt-get install build-essential \
+      git mercurial \
+      virtualenv python-pip python-dev python-pip \
+      zlib1g-dev zlib1g unzip zip libbz2 libbz2-dev \
+      libglpk-dev libglpk36 gfortran \
+      swig \
+      libfreetype6-dev libfreetype6 libpng12-0
+
+Matplotlib can't find /usr/include/freetype2/ft2build.h, but it can
+find /usr/include/ft2build.h, so link it up::
+
+  sudo ln -sv /usr/include/freetype2/ft2build.h /usr/include/ft2build.h
+
 
 
 Indices and tables
