@@ -27,7 +27,9 @@ class Usearch16SPipeline(SixteenSPipeline):
                 'M': '2'    
             }
         },
-        'demultiplex_illumina': { },
+        'demultiplex_illumina': {
+            "group_by_sampleid": True
+        },
         'pick_otus_closed_ref': {
             "usearch_closed_opts": {
                 "strand": "both",
