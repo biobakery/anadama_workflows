@@ -93,7 +93,7 @@ def demultiplex(map_fname, fasta_fname, qual_fname, output_fname,
     """
     
     
-    output_dir=os.path.dirname(output_fname)
+    output_dir, output_basename = os.path.split(output_fname)
     opts = dict_to_cmd_opts(qiime_opts)
     
     cmd = ("split_libraries.py"+
@@ -103,9 +103,14 @@ def demultiplex(map_fname, fasta_fname, qual_fname, output_fname,
            " --dir-prefix="+output_dir+
            " "+opts)
 
+    actions = [cmd]
+    if output_basename != "seqs.fna":
+        default_out = os.path.join(output_dir, "seqs.fna")
+        actions.append("mv '%s' '%s'"%(default_out, output_fname))
+    
     return {
         "name": "demultiplex:"+fasta_fname,
-        "actions": [cmd],
+        "actions": actions,
         "file_dep": [map_fname, fasta_fname, qual_fname],
         "targets": [output_fname]
     }
@@ -245,6 +250,26 @@ def pick_otus_closed_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
         "targets": [output_fname],
         "file_dep": [input_fname]
     }
+
+
+@requires(binaries=["assign_taxonomy.py"])
+def assign_taxonomy(in_fasta, out_dir, qiime_opts={}):
+
+    name = rmext(os.path.basename(in_fasta))+"_tax_assignments.txt"
+    taxonomy_out = os.path.join(out_dir, name)
+    
+    default_opts = dict([
+        ("r", settings.workflows.sixteen.otu_refseq),
+        ("t", settings.workflows.sixteen.otu_taxonomy),
+    ]+list(qiime_opts.items()))
+
+    cmd = ("assign_taxonomy.py -i "+in_fasta+" -o "+out_dir+
+           " "+dict_to_cmd_opts(default_opts))
+
+    return { "name"     : "assign_taxonomy: "+taxonomy_out,
+             "targets"  : [taxonomy_out],
+             "actions"  : [cmd],
+             "file_dep" : [default_opts['r'], default_opts['t'], in_fasta] }
 
 
 @requires(binaries=['pick_open_reference_otus.py', 'sequence_convert'])
