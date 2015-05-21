@@ -34,6 +34,7 @@ class DemultiplexMixin(object):
             options['barcode_type'] = _determine_barcode_type(
                 self.sample_metadata)
 
+        do_groupby = options.pop("group_by_sampleid", False)
         for seqfile, bcode_file in bcode_pairs:
             sample_dir = join(self.products_dir, basename(seqfile)+"_split")
 
@@ -46,13 +47,23 @@ class DemultiplexMixin(object):
                 **self.options.get('write_map', dict())
             ) )
 
-            outfile = util.new_file(util.addtag(basename(seqfile), "demuxed"),
-                                    basedir=sample_dir) 
-            demuxed.append(outfile)
+            outfile = util.new_file(
+                util.rmext(basename(seqfile))+"_demuxed.fna",
+                basedir=sample_dir
+            ) 
             tasks.append( sixteen.demultiplex_illumina(
                 [seqfile], [bcode_file], map_fname, outfile,
                 qiime_opts=options
             ) )
+            if do_groupby:
+                sample_ids = [ s[0] for s in sample_group ]
+                task_dict = general.group_by_sampleid(
+                    outfile, sample_dir, sample_ids
+                )
+                demuxed.extend(task_dict['targets'])
+                tasks.append(task_dict)
+            else:
+                demuxed.append(outfile)
 
         return demuxed, tasks
             
