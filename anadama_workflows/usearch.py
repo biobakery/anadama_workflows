@@ -309,6 +309,8 @@ def pick_otus_closed_ref(in_fasta, out_biom,
 
     def _fmt_otutab():
         import re
+        from operator import add
+        from collections import defaultdict
 
         def fields(fname, get_idxs=None):
             get = lambda item: item
@@ -325,15 +327,22 @@ def pick_otus_closed_ref(in_fasta, out_biom,
         otu_header = next(otu_rows)
         otu_idx = dict([ (row[0], row) for row in otu_rows ])
 
+        default = lambda: [0 for _ in otu_header[1:]]
+        output_dict = defaultdict(default)
+        for query, target in fields(closed_out, get_idxs=(-2, -1)):
+            otu_id = re.search("OTU_(\d+)", query).group(1)
+            abd = map(int, otu_idx[otu_id][1:])
+            taxy = idx.get(target)
+            if taxy:
+                otu_id = target
+            current = output_dict[(otu_id, taxy)]
+            output_dict[(otu_id, taxy)] = map(add, current, abd)
+                    
         with open(out_tsv, 'w') as out_f:
             print >> out_f, "\t".join(list(otu_header)+["Consensus Lineage"])
-            for query, target in fields(closed_out, get_idxs=(-2, -1)):
-                otu_id = re.search("OTU_(\d+)", query).group(1)
-                abd = otu_idx[otu_id][1:]
-                taxy = idx.get(target)
-                if taxy:
-                    otu_id = target
-                print >> out_f, "\t".join([otu_id]+list(abd)+[str(taxy)])
+            for (otu_id, taxy), abd in output_dict.iteritems():
+                abd = map(str, abd)
+                print >> out_f, "\t".join([otu_id]+abd+[taxy])
 
     biom_cmd = ("biom convert -i "+out_tsv+" -o "+out_biom+
                 " --table-type='OTU Table' --process-obs-metadata=taxonomy")
@@ -351,3 +360,4 @@ def pick_otus_closed_ref(in_fasta, out_biom,
             "actions": actions,
             "file_dep": [in_fasta, denovo_otutab, nonchimera] }
     
+
