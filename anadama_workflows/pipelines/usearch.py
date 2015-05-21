@@ -35,9 +35,9 @@ class Usearch16SPipeline(SixteenSPipeline):
                 tsv_filename)
 
         # infer genes and pathways with picrust
-        for otu_table in self.otu_tables:
-            yield sixteen.picrust(
-                otu_table, 
-                **self.options.get('picrust', dict())
-            )
+        # for otu_table in self.otu_tables:
+        #     yield sixteen.picrust(
+        #         otu_table, 
+        #         **self.options.get('picrust', dict())
+        #     )
 
