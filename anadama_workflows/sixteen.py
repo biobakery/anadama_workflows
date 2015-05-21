@@ -123,7 +123,7 @@ def demultiplex(map_fname, fasta_fname, qual_fname, output_fname,
 def demultiplex_illumina(fastq_fnames, barcode_fnames, map_fname, output_fname,
                          verbose=True, qiime_opts={}):
 
-    output_dir, output_base =os.path.split(output_fname)
+    output_dir, output_basename = os.path.split(output_fname)
     default_opts = {
         "i": ",".join(fastq_fnames),
         "b": ",".join(barcode_fnames),
@@ -172,7 +172,7 @@ def demultiplex_illumina(fastq_fnames, barcode_fnames, map_fname, output_fname,
 
     return {
         "name": "demultiplex_illumina:"+output_fname,
-        "actions": [PythonAction(run)],
+        "actions": actions,
         "file_dep": list(fastq_fnames) + list(barcode_fnames) + [map_fname],
         "targets": [output_fname]
     }
