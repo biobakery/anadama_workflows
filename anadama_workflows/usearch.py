@@ -156,6 +156,31 @@ def filter(input_fastq, output_fasta, verbose=True, **opts):
              "targets"  : [output_fasta] }
 
 
+@requires(binaries=["usearch8"],
+          version_methods="usearch8 -version")
+def truncate(fastx_in, fasta_out=None, fastq_out=None, **opts):
+    default_opts = dict([
+        ("trunclen", "215"),
+    ]+list(opts.items()))
+
+    if fasta_out:
+        out = fasta_out
+        default_opts['fastaout'] = fasta_out
+    elif fastq_out:
+        out = fastq_out
+        default_opts['fastqout'] = fastq_out
+    else:
+        raise ValueError("must provide either fasta_out or fastq_out arguments")
+
+    cmd = ("usearch8 -fastx_truncate "+fastx_in+
+           " "+usearch_dict_flags(default_opts))
+
+    return { "name": "usearch_truncate: "+out,
+             "actions": [cmd],
+             "targets": [out],
+             "file_dep": [fastx_in] }
+
+
 @requires(binaries=["usearch8", "uclust_otutable"],
           version_methods=["usearch8 -version",
                            "pip freeze | fgrep anadama_workflows"])
@@ -220,7 +245,7 @@ def pick_denovo_otus(fasta_in, otutab_out, remove_tempfiles=True,
     otu_cmd = ("uclust_otutable %s > %s"%(map_out, otutab_out))
 
     cleanup_cmd = "rm " + " ".join((derep_out, sort_out,
-                                    cluster_otus_out, chimera_out, map_out))
+                                    cluster_otus_out, map_out))
 
     actions = [ mkdir_cmd, derep_cmd, sort_cmd, cluster_cmd,
                 chimera_cmd, map_cmd, otu_cmd ]
@@ -230,57 +255,99 @@ def pick_denovo_otus(fasta_in, otutab_out, remove_tempfiles=True,
     return { "name"     : "usearch_pick_denovo_otus: "+otutab_out,
              "actions"  : actions,
              "file_dep" : [fasta_in],
-             "targets"  : [otutab_out] }
+             "targets"  : [otutab_out, chimera_out] }
 
 
-@requires(binaries=["usearch8", "assign_taxonomy.py", "biom"])
+@requires(binaries=["usearch8", "biom"])
 def pick_otus_closed_ref(in_fasta, out_biom,
+                         out_tsv=None,
+                         non_chimeric_otu_seqs=None,
+                         denovo_otu_txt=None,
                          sample_metadata_fname=None,
-                         remove_tempfiles=True, qiime_opts={}):
+                         taxonomy_fname=None,
+                         ref_fasta=None,
+                         remove_tempfiles=True,
+                         usearch_closed_opts={},
+                         denovo_opts={}):
 
-    denovo_otutab = in_fasta+".otus.txt"
-    task_dict = next(iter(
-        pick_denovo_otus(in_fasta, denovo_otutab,
-                         remove_tempfiles=False)
-    ))
-    yield task_dict
 
-    tmpfolder = in_fasta+"_otus"
-    usearchfolder = denovo_otutab+"_usearch"
-    nonchimera = join(usearchfolder, "nonchimeric.fa")
-    task_dict = next(iter(
-        assign_taxonomy(nonchimera, tmpfolder, qiime_opts=qiime_opts)
-    ))
-    yield task_dict
+    if not taxonomy_fname:
+        taxonomy_fname = settings.workflows.sixteen.otu_taxonomy
+    if not ref_fasta:
+        ref_fasta = settings.workflows.usearch.otu_db
+    if not out_tsv:
+        out_tsv = out_biom+".tsv"
 
-    tax_fname = task_dict["targets"][0]
-    formatted_tax_fname = addtag(tax_fname, "fmt")
-    def _format_tax():
+    if denovo_otu_txt and non_chimeric_otu_seqs:
+        denovo_otutab = denovo_otu_txt
+        nonchimera = non_chimeric_otu_seqs
+    else:
+        denovo_otutab = in_fasta+".otus.txt"
+        usearchfolder = denovo_otutab+"_usearch"
+        nonchimera = join(usearchfolder, "nonchimeric.fa")
+        denovo_opts.pop("remove_tempfiles", None)
+        task_dict = next(iter(
+            pick_denovo_otus(in_fasta, denovo_otutab,
+                             remove_tempfiles=remove_tempfiles,
+                             **denovo_opts)
+        ))
+        yield task_dict
+
+    default_u_opts = dict([
+        ("strand", "both"),
+        ("id", "0.97"),
+    ]+list(usearch_closed_opts.items()))
+
+    tmpfolder = in_fasta+"_closedref"
+    mkdir_cmd = "test -d "+tmpfolder+" || mkdir "+tmpfolder
+
+    closed_out = join(tmpfolder, "closed.uc")
+    usearch_cmd = ("usearch8 -usearch_global "+nonchimera+
+                   " -db "+ref_fasta+
+                   " -uc "+closed_out+
+                   " -top_hit_only "+usearch_dict_flags(default_u_opts))
+
+    def _fmt_otutab():
         import re
-        with open(tax_fname) as f_in, open(formatted_tax_fname, 'w') as f_out:
-            print >> f_out, "\t".join(("#OTUID", "taxonomy"))
-            for line in f_in:
-                fields = line.split('\t')
-                otu_id = re.search(r'OTU_(\d+)', fields[0]).group(1)
-                print >> f_out, "\t".join((otu_id, fields[1]))
-                
-    tmpbiom = join(tmpfolder, "tmp.biom")
-    biom_cmd_a = ("biom convert -i "+denovo_otutab+
-                  " -o "+tmpbiom+" --table-type='OTU Table'")
-    biom_cmd_b = ("biom add-metadata -i "+tmpbiom+
-                  " --observation-metadata="+formatted_tax_fname+
-                  " -o "+out_biom)
+
+        def fields(fname, get_idxs=None):
+            get = lambda item: item
+            if get_idxs:
+                get = lambda item: [item[idx] for idx in get_idxs]
+            with open(fname) as f:
+                for line in f:
+                    line = line.strip().split('\t')
+                    if line:
+                        yield get(line)
+
+        idx = dict(fields(taxonomy_fname))
+        otu_rows = fields(denovo_otutab)
+        otu_header = next(otu_rows)
+        otu_idx = dict([ (row[0], row) for row in otu_rows ])
+
+        with open(out_tsv, 'w') as out_f:
+            print >> out_f, "\t".join(list(otu_header)+["Consensus Lineage"])
+            for query, target in fields(closed_out, get_idxs=(-2, -1)):
+                otu_id = re.search("OTU_(\d+)", query).group(1)
+                abd = otu_idx[otu_id][1:]
+                taxy = idx.get(target)
+                if taxy:
+                    otu_id = target
+                print >> out_f, "\t".join([otu_id]+list(abd)+[str(taxy)])
+
+    biom_cmd = ("biom convert -i "+out_tsv+" -o "+out_biom+
+                " --table-type='OTU Table' --process-obs-metadata=taxonomy")
 
     if sample_metadata_fname:
-        biom_cmd_b += " --sample-metadata-fp=" + sample_metadata_fname
+        biom_cmd += " --sample-metadata-fp=" + sample_metadata_fname
 
-    actions = [ _format_tax, biom_cmd_a, biom_cmd_b ]
+    actions = [mkdir_cmd, usearch_cmd, _fmt_otutab, biom_cmd]
     if remove_tempfiles:
-        cmd = "rm -rf "+tmpfolder+" "+usearchfolder+" "+denovo_otutab
+        cmd = "rm -rf "+tmpfolder
         actions.append(cmd)
 
     yield { "name": "usearch_pick_otus_closed_ref: "+out_biom,
             "targets": [out_biom],
             "actions": actions,
-            "file_dep": [in_fasta] }
+            "file_dep": [in_fasta, denovo_otutab, nonchimera] }
     

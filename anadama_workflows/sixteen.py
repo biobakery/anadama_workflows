@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 """16S workflows"""
 
 import os
@@ -122,7 +123,7 @@ def demultiplex(map_fname, fasta_fname, qual_fname, output_fname,
 def demultiplex_illumina(fastq_fnames, barcode_fnames, map_fname, output_fname,
                          verbose=True, qiime_opts={}):
 
-    output_dir=os.path.dirname(output_fname)
+    output_dir, output_base =os.path.split(output_fname)
     default_opts = {
         "i": ",".join(fastq_fnames),
         "b": ",".join(barcode_fnames),
@@ -163,6 +164,11 @@ def demultiplex_illumina(fastq_fnames, barcode_fnames, map_fname, output_fname,
                  CmdAction(cmd+revcomp_opts,verbose=verbose))),
         )
 
+
+    actions = [run]
+    if output_basename != "seqs.fna":
+        default_out = os.path.join(output_dir, "seqs.fna")
+        actions.append("mv '%s' '%s'"%(default_out, output_fname))
 
     return {
         "name": "demultiplex_illumina:"+output_fname,
@@ -413,8 +419,37 @@ def picrust(file, output_dir=None, verbose=True, **opts):
 
     all_opts = { 'tab_in'          : 0,  'tab_out' : 0,
                  'gg_version'      : '', 't'       : '', 
-                 'with_confidence' : 0,  'custom'  : '' }
+                 'with_confidence' : 0,  'custom'  : '',
+                 'drop_unknown'    : True}
     all_opts.update(opts)
+    drop_unknown = all_opts.pop("drop_unknown", True)
+
+    _copy_fname = settings.workflows.picrust.copy_number
+    def _drop_unknown():
+        import os
+        import gzip
+        import json
+        from biom.table import DenseOTUTable
+        from biom.parse import (
+            OBS_META_TYPES,
+            parse_biom_table,
+            parse_classic_table_to_rich_table
+        )
+        idx = set([ row.strip().split('\t')[0]
+                    for row in gzip.open(_copy_fname) ])
+        filter_func = lambda a, otu_id, c: str(otu_id) in idx
+        tmpfile = file+"_tmp.biom"
+        with open(file) as f, open(tmpfile, 'w') as f_out:
+            try:
+                table = parse_biom_table(f)
+            except Exception as e:
+                table = parse_classic_table_to_rich_table(
+                    f, None, None, OBS_META_TYPES['taxonomy'], DenseOTUTable)
+            table = table.filterObservations(filter_func)
+            json.dump( table.getBiomFormatObject("AnADAMA"), f_out )
+        os.rename(file, addtag(file, "unfiltered"))
+        os.rename(tmpfile, file)
+
 
     cmd1 = ("normalize_by_copy_number.py "
             + "-i %s"
@@ -460,9 +495,12 @@ def picrust(file, output_dir=None, verbose=True, **opts):
                               CmdAction(cmd2%(converted), verbose=verbose)))
         )
              
+    actions = [run]
+    if drop_unknown:
+        actions = [_drop_unknown, run]
 
     return dict(name = "picrust:"+predict_out,
-                actions = [run],
+                actions = actions,
                 file_dep = [file],
                 targets = [predict_out, norm_out])
 

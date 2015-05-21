@@ -229,6 +229,7 @@ class SixteenSPipeline(Pipeline, DemultiplexMixin, SampleFilterMixin,
         for t in maybe_tasks:
             yield t
 
+    def _demultiplex(self):
         if self.barcode_seq_files:
             # must be an illumina run, then
             demuxed, tasks = self.split_illumina_style(
@@ -244,8 +245,9 @@ class SixteenSPipeline(Pipeline, DemultiplexMixin, SampleFilterMixin,
 
     def _configure(self):
         if self.raw_seq_files:
-            tasks = self._handle_raw_seqs()
-            for task in tasks:
+            for task in self._handle_raw_seqs():
+                yield task
+            for task in self._demultiplex():
                 yield task
 
         # ensure all files are decompressed
