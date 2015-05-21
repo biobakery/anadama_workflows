@@ -213,3 +213,4 @@ from .vis import VisualizationPipeline
 from .wgs import WGSPipeline
 from .sixteen import SixteenSPipeline
 from .rna import RNAPipeline
+from .usearch import Usearch16SPipeline
