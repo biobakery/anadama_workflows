@@ -342,7 +342,7 @@ def pick_otus_closed_ref(in_fasta, out_biom,
             print >> out_f, "\t".join(list(otu_header)+["Consensus Lineage"])
             for (otu_id, taxy), abd in output_dict.iteritems():
                 abd = map(str, abd)
-                print >> out_f, "\t".join([otu_id]+abd+[taxy])
+                print >> out_f, "\t".join([otu_id]+abd+[str(taxy)])
 
     biom_cmd = ("biom convert -i "+out_tsv+" -o "+out_biom+
                 " --table-type='OTU Table' --process-obs-metadata=taxonomy")
