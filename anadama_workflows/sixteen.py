@@ -156,18 +156,24 @@ def demultiplex_illumina(fastq_fnames, barcode_fnames, map_fname, output_fname,
             )
 
 
+    default_out = os.path.join(output_dir, "seqs.fna")
+    output_exists = lambda *args, **kwargs: (
+        not os.path.exists(default_out)
+        or not os.stat(default_out).st_size > 1
+    )
+
     def run():
         return strategies.backup(
             (CmdAction(cmd+opts, verbose=verbose),
              strategies.Group(
                  PythonAction(_revcomp),
                  CmdAction(cmd+revcomp_opts,verbose=verbose))),
+            extra_conditions=[output_exists]
         )
 
 
     actions = [run]
     if output_basename != "seqs.fna":
-        default_out = os.path.join(output_dir, "seqs.fna")
         actions.append("mv '%s' '%s'"%(default_out, output_fname))
 
     return {
