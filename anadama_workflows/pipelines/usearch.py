@@ -33,7 +33,7 @@ class Usearch16SPipeline(SixteenSPipeline):
         'pick_otus_closed_ref': {
             "usearch_closed_opts": {
                 "strand": "both",
-                "id": "0.97"
+                "id": "0.90"
             }
         },
         'picrust':              { },
