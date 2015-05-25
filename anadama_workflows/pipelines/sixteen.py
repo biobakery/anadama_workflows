@@ -163,6 +163,16 @@ class SixteenSPipeline(Pipeline, DemultiplexMixin, SampleFilterMixin,
         'picrust':              { },
     }
 
+    workflows = {
+        'infer_pairs':          None,
+        'write_map':            None,
+        'fastq_split':          general.fastq_split,
+        'demultiplex':          sixteen.demultiplex,
+        'demultiplex_illumina': sixteen.demultiplex_illumina,
+        'pick_otus_closed_ref': sixteen.pick_otus_closed_ref,
+        'picrust':              sixteen.picrust
+    }
+
     def __init__(self,
                  sample_metadata,
                  raw_seq_files=list(),

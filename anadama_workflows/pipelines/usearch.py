@@ -6,6 +6,7 @@ from anadama import util
 from .sixteen import SixteenSPipeline
 
 from .. import biom
+from .. import general
 from .. import sixteen
 from ..usearch import pick_otus_closed_ref, truncate
 
@@ -37,6 +38,17 @@ class Usearch16SPipeline(SixteenSPipeline):
             }
         },
         'picrust':              { },
+    }
+
+    workflows = {
+        'infer_pairs': None,
+        'write_map':   None,
+        'truncate':  truncate,
+        'fastq_split': general.fastq_split,
+        'demultiplex': sixteen.demultiplex,
+        'demultiplex_illumina': sixteen.demultiplex_illumina,
+        'pick_otus_closed_ref': pick_otus_closed_ref,
+        'picrust':              sixteen.picrust
     }
 
 

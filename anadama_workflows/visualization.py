@@ -77,9 +77,9 @@ def breadcrumbs_pcoa_plot(pcl_fname, output_plot_fname, **opts):
     pcoa_cmd = ("scriptPcoa.py ")
 
     default_opts = {
-        "meta"       : None,
-        "id"         : None,
-        "noShape"    : None,
+        "meta"       : True,
+        "id"         : True,
+        "noShape"    : True,
         "outputFile" : output_plot_fname
     }
     default_opts.update(opts)

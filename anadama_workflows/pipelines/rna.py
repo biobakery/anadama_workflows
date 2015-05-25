@@ -56,6 +56,14 @@ class RNAPipeline(Pipeline, SampleMetadataMixin):
         'subread_align'   : { },
         'featureCounts'   : { }
     }
+
+    workflows = {
+        'infer_pairs': None,
+        'sequence_convert': None,
+        'to_paired_fastq': samtools.to_paired_fastq,
+        'subread_align': subread.align,
+        'featureCounts': subread.featureCounts
+    }
     
     def __init__(self, sample_metadata, 
                  raw_seq_files=list(),
