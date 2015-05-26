@@ -334,8 +334,10 @@ def pick_otus_closed_ref(in_fasta, out_biom,
             if otu_id not in otu_idx:
                 continue
             abd = map(int, otu_idx[otu_id][1:])
-            taxy = idx.get(target, None)
-            if taxy:
+            taxy = idx.get(target, "Unclassified")
+            if taxy == "Unclassified":
+                otu_id = "0"
+            else:
                 otu_id = target
             current = output_dict[(otu_id, taxy)]
             output_dict[(otu_id, taxy)] = map(add, current, abd)
@@ -344,7 +346,7 @@ def pick_otus_closed_ref(in_fasta, out_biom,
             print >> out_f, "\t".join(list(otu_header)+["Consensus Lineage"])
             for (otu_id, taxy), abd in output_dict.iteritems():
                 abd = map(str, abd)
-                print >> out_f, "\t".join([otu_id]+abd+[str(taxy)])
+                print >> out_f, "\t".join([otu_id]+abd+[taxy])
 
     biom_cmd = ("biom convert -i "+out_tsv+" -o "+out_biom+
                 " --table-type='OTU Table' --process-obs-metadata=taxonomy"+
