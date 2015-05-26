@@ -1,14 +1,19 @@
+"""Goes from a usearch mapping results file to an OTU table, 
+-> samples \/ OTUs 
+
+Assumes that search query sequences are from qiime-formatted
+demultiplexed sequence files. That is, the sequence label is composed
+of the sampleid along with other items, separated by underscores '_'.
+The first item before the underscore is assumed to be the sample id.
+
+"""
+
 import re
 import sys
 from collections import defaultdict
 
 def parsetarget(target_str):
-    otu_id = re.search(r'OTU_(\d+)', target_str).group(1)
-    match = re.search(r'size=(\d+)', target_str)
-    size = 1
-    if match:
-        size = int(match.group(1))
-    return otu_id, size
+    return re.search(r'OTU_(\d+)', target_str).group(1)
 
 def fields(uc_fname):
     with open(uc_fname) as f:
@@ -17,8 +22,8 @@ def fields(uc_fname):
                 fields = line.split('\t')
                 query, target = fields[8], fields[9]
                 sample_id = query.split("_", 1)[0]
-                otu_id, size = parsetarget(target)
-                yield sample_id, otu_id, size
+                otu_id = parsetarget(target)
+                yield sample_id, otu_id
 
 def get(d, items, default=0):
     return [d.get(item, default) for item in items]
@@ -36,9 +41,9 @@ def main(uc_fname=None):
         uc_fname = sys.argv[1]
     table_dict = defaultdict(lambda:defaultdict(int))
     sample_ids = set()
-    for sample_id, otu_id, size in fields(uc_fname):
+    for sample_id, otu_id in fields(uc_fname):
         sample_ids.add(sample_id)
-        table_dict[otu_id][sample_id] += size
+        table_dict[otu_id][sample_id] += 1
 
     output(table_dict, sample_ids)
 
