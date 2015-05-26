@@ -347,7 +347,8 @@ def pick_otus_closed_ref(in_fasta, out_biom,
                 print >> out_f, "\t".join([otu_id]+abd+[str(taxy)])
 
     biom_cmd = ("biom convert -i "+out_tsv+" -o "+out_biom+
-                " --table-type='OTU Table' --process-obs-metadata=taxonomy")
+                " --table-type='OTU Table' --process-obs-metadata=taxonomy"+
+                " --output-metadata-id=taxonomy")
 
     if sample_metadata_fname:
         biom_cmd += " --sample-metadata-fp=" + sample_metadata_fname
