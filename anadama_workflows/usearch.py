@@ -331,8 +331,10 @@ def pick_otus_closed_ref(in_fasta, out_biom,
         output_dict = defaultdict(default)
         for query, target in fields(closed_out, get_idxs=(-2, -1)):
             otu_id = re.search("OTU_(\d+)", query).group(1)
+            if otu_id not in otu_idx:
+                continue
             abd = map(int, otu_idx[otu_id][1:])
-            taxy = idx.get(target)
+            taxy = idx.get(target, None)
             if taxy:
                 otu_id = target
             current = output_dict[(otu_id, taxy)]
