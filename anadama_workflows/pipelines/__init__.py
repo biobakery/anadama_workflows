@@ -4,6 +4,7 @@ All anadama_workflows pipelines
 
 import re
 import os
+import contextlib
 from itertools import dropwhile, chain
 from anadama import util
 
@@ -61,8 +62,11 @@ class SampleMetadataMixin(object):
         if type(self.sample_metadata) is str:
             self.sample_metadata = [self.sample_metadata]
         if type(self.sample_metadata[0]) is str:
-            with open(self.sample_metadata[0]) as metadata_f:
-                samples = list( util.deserialize_map_file(metadata_f) )
+            metadata_files = map(open, self.sample_metadata)
+            with contextlib.nested(*metadata_files):
+                samples = list( chain.from_iterable(
+                    map(util.deserialize_map_file, metadata_files)
+                ))
         if str(self.sample_metadata[0]).startswith("Sample"):
             samples = self.sample_metadata
                 
@@ -209,3 +213,4 @@ from .vis import VisualizationPipeline
 from .wgs import WGSPipeline
 from .sixteen import SixteenSPipeline
 from .rna import RNAPipeline
+from .usearch import Usearch16SPipeline

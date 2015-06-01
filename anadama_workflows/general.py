@@ -254,3 +254,23 @@ def cat(input_files, output_file):
         "file_dep": input_files,
         "targets": [output_file]
     }
+
+def group_by_sampleid(large_fasta, output_dir, sample_ids):
+    output_fnames = [ os.path.join(output_dir, s+"_demuxed.fa")
+                      for s in sample_ids ]
+
+    def _run():
+        import contextlib
+        from Bio import SeqIO
+        files = dict([ (s_id, open(f, 'w'))
+                       for f, s_id in zip(output_fnames, sample_ids)])
+        with contextlib.nested(*list(files.values())):
+            for rec in SeqIO.parse(large_fasta, 'fasta'):
+                sample_id = rec.id.split("_", 1)[0]
+                SeqIO.write(rec, files[sample_id], "fasta")
+
+    return { "name": "group_by_sampleid: "+large_fasta,
+             "actions": [_run],
+             "targets": output_fnames,
+             "file_dep": [large_fasta] }
+                

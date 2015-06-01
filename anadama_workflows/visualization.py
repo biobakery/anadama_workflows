@@ -5,8 +5,8 @@ from anadama.action import CmdAction
 from anadama.decorators import requires
 from anadama.util import addtag, dict_to_cmd_opts
 
-@requires(binaries=["qiime_cmd"],
-          version_methods=["qiime_cmd print_qiime_config.py "
+@requires(binaries=["summarize_taxa_through_plots.py"],
+          version_methods=["print_qiime_config.py "
                            "| awk '/QIIME library version/{print $NF;}'"])
 def stacked_bar_chart(biom_fname, output_dir, qiime_opts=dict()):
     """Workflow to produce stacked bar charts of biom-formatted taxonomic
@@ -29,7 +29,7 @@ def stacked_bar_chart(biom_fname, output_dir, qiime_opts=dict()):
 
     """
 
-    cmd = ("qiime_cmd summarize_taxa_through_plots.py "
+    cmd = ("summarize_taxa_through_plots.py "
            "-i {} -o {} ".format(biom_fname, output_dir))
     
     default_opts = {
@@ -77,9 +77,9 @@ def breadcrumbs_pcoa_plot(pcl_fname, output_plot_fname, **opts):
     pcoa_cmd = ("scriptPcoa.py ")
 
     default_opts = {
-        "meta"       : None,
-        "id"         : None,
-        "noShape"    : None,
+        "meta"       : True,
+        "id"         : True,
+        "noShape"    : True,
         "outputFile" : output_plot_fname
     }
     default_opts.update(opts)

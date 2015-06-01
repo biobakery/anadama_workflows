@@ -56,16 +56,35 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
             'infer': True
         },
         'sequence_convert': { },
-        'decontaminate':    { },
-        'metaphlan2':       { },
-        'bowtie2_align':    { },
-        'humann':           { }
+        'decontaminate':    {
+            "trim-args": "'LEADING:3 TRAILING:3'"
+        },
+        'metaphlan2':       {
+            'bt2_ps': 'very-sensitive'
+        },
+        'humann':           {
+            "memory-use"         : "minimum",
+            "log-level"          : "INFO",
+            "remove-temp-output" : True,
+            "output-format"      : "tsv"
+        }
     }
+
+    workflows = {
+        'infer_pairs':      None,
+        'sequence_convert': None,
+        'decontaminate':    wgs.knead_data,
+        'metaphlan2':       wgs.metaphlan2,
+        'humann':           wgs.humann2
+    }
+
 
     def __init__(self, sample_metadata,
                  raw_seq_files=list(), 
                  intermediate_fastq_files=list(),
                  decontaminated_fastq_files=list(),
+                 metaphlan_results=None,
+                 otu_tables=None,
                  products_dir=str(),
                  workflow_options=dict(),
                  *args, **kwargs):
@@ -151,7 +170,10 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
             name_base = os.path.join(self.products_dir,
                                      basename(fastq_file))
             name_base = util.rmext(name_base, all=True)
-            task_dict = wgs.knead_data([fastq_file], name_base).next()
+            task_dict = next(wgs.knead_data(
+                [fastq_file], name_base,
+                **self.options.get('decontaminate', {})
+            ))
             decontaminated_fastq = first_half(task_dict['targets'])
             self.decontaminated_fastq_files.extend(decontaminated_fastq)
             yield task_dict

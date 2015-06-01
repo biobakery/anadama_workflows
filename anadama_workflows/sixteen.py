@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 """16S workflows"""
 
 import os
@@ -62,8 +63,8 @@ def write_map(sample_group, sample_dir):
     }
 
 
-@requires(binaries=['qiime_cmd'],
-          version_methods=["qiime_cmd print_qiime_config.py "
+@requires(binaries=['split_libraries.py'],
+          version_methods=[" print_qiime_config.py "
                            "| awk '/QIIME library version/{print $NF;}'"])
 def demultiplex(map_fname, fasta_fname, qual_fname, output_fname,
                 qiime_opts={}):
@@ -88,36 +89,41 @@ def demultiplex(map_fname, fasta_fname, qual_fname, output_fname,
                          of { "my-option": "" }.
 
     External dependencies:
-      - Qiime 1.8.0: https://github.com/qiime/qiime-deploy
+      - Qiime 1.8.0: https://github.com/qiime/qiime
 
     """
     
     
-    output_dir=os.path.dirname(output_fname)
+    output_dir, output_basename = os.path.split(output_fname)
     opts = dict_to_cmd_opts(qiime_opts)
     
-    cmd = ("qiime_cmd split_libraries.py"+
+    cmd = ("split_libraries.py"+
            " --map="+map_fname+
            " --fasta="+fasta_fname+
            " --qual="+qual_fname+
            " --dir-prefix="+output_dir+
            " "+opts)
 
+    actions = [cmd]
+    if output_basename != "seqs.fna":
+        default_out = os.path.join(output_dir, "seqs.fna")
+        actions.append("mv '%s' '%s'"%(default_out, output_fname))
+    
     return {
         "name": "demultiplex:"+fasta_fname,
-        "actions": [cmd],
+        "actions": actions,
         "file_dep": [map_fname, fasta_fname, qual_fname],
         "targets": [output_fname]
     }
 
 
-@requires(binaries=['qiime_cmd'],
-          version_methods=["qiime_cmd print_qiime_config.py "
+@requires(binaries=['split_libraries_fastq.py'],
+          version_methods=["print_qiime_config.py "
                            "| awk '/QIIME library version/{print $NF;}'"])
 def demultiplex_illumina(fastq_fnames, barcode_fnames, map_fname, output_fname,
                          verbose=True, qiime_opts={}):
 
-    output_dir=os.path.dirname(output_fname)
+    output_dir, output_basename = os.path.split(output_fname)
     default_opts = {
         "i": ",".join(fastq_fnames),
         "b": ",".join(barcode_fnames),
@@ -127,7 +133,7 @@ def demultiplex_illumina(fastq_fnames, barcode_fnames, map_fname, output_fname,
     default_opts.update(qiime_opts)
     opts = dict_to_cmd_opts(default_opts)
     
-    cmd = "qiime_cmd split_libraries_fastq.py "
+    cmd = "split_libraries_fastq.py "
 
     revcomp_map_fname = new_file(addtag(map_fname, "revcomp"),
                                  basedir=output_dir)
@@ -150,25 +156,36 @@ def demultiplex_illumina(fastq_fnames, barcode_fnames, map_fname, output_fname,
             )
 
 
+    default_out = os.path.join(output_dir, "seqs.fna")
+    output_exists = lambda *args, **kwargs: (
+        not os.path.exists(default_out)
+        or not os.stat(default_out).st_size > 1
+    )
+
     def run():
         return strategies.backup(
             (CmdAction(cmd+opts, verbose=verbose),
              strategies.Group(
                  PythonAction(_revcomp),
                  CmdAction(cmd+revcomp_opts,verbose=verbose))),
+            extra_conditions=[output_exists]
         )
 
 
+    actions = [run]
+    if output_basename != "seqs.fna":
+        actions.append("mv '%s' '%s'"%(default_out, output_fname))
+
     return {
         "name": "demultiplex_illumina:"+output_fname,
-        "actions": [PythonAction(run)],
+        "actions": actions,
         "file_dep": list(fastq_fnames) + list(barcode_fnames) + [map_fname],
         "targets": [output_fname]
     }
 
 
 
-@requires(binaries=['qiime_cmd', 'sequence_convert'])
+@requires(binaries=['pick_closed_reference_otus.py', 'sequence_convert'])
 def pick_otus_closed_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
     """Workflow to perform OTU picking, generates a biom-formatted OTU
     table from demultiplexed 16S reads. This workflow (in general
@@ -214,7 +231,7 @@ def pick_otus_closed_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
     default_opts.update(qiime_opts)
     opts = dict_to_cmd_opts(default_opts)
 
-    cmd = ("qiime_cmd pick_closed_reference_otus.py"+
+    cmd = ("pick_closed_reference_otus.py"+
            " --input_fp={}"+
            " --output_dir="+output_dir+
            " -f"+
@@ -247,7 +264,27 @@ def pick_otus_closed_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
     }
 
 
-@requires(binaries=['qiime_cmd', 'sequence_convert'])
+@requires(binaries=["assign_taxonomy.py"])
+def assign_taxonomy(in_fasta, out_dir, qiime_opts={}):
+
+    name = rmext(os.path.basename(in_fasta))+"_tax_assignments.txt"
+    taxonomy_out = os.path.join(out_dir, name)
+    
+    default_opts = dict([
+        ("r", settings.workflows.sixteen.otu_refseq),
+        ("t", settings.workflows.sixteen.otu_taxonomy),
+    ]+list(qiime_opts.items()))
+
+    cmd = ("assign_taxonomy.py -i "+in_fasta+" -o "+out_dir+
+           " "+dict_to_cmd_opts(default_opts))
+
+    return { "name"     : "assign_taxonomy: "+taxonomy_out,
+             "targets"  : [taxonomy_out],
+             "actions"  : [cmd],
+             "file_dep" : [default_opts['r'], default_opts['t'], in_fasta] }
+
+
+@requires(binaries=['pick_open_reference_otus.py', 'sequence_convert'])
 def pick_otus_open_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
     """Workflow to perform open-reference OTU picking. Similar to
     closed-reference OTU picking, this workflow generates a
@@ -293,7 +330,7 @@ def pick_otus_open_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
     default_opts.update(qiime_opts)
     opts = dict_to_cmd_opts(default_opts)
 
-    cmd = ("qiime_cmd pick_open_reference_otus.py"+
+    cmd = (" pick_open_reference_otus.py"+
            " --input_fp={}"+
            " --output_dir="+output_dir+
            " -f"+
@@ -326,7 +363,7 @@ def pick_otus_open_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
     }
 
 
-@requires(binaries=['qiime_cmd'])
+@requires(binaries=['merge_otu_tables.py'])
 def merge_otu_tables(files_list, name):
     """Workflow to merge OTU tables into a single OTU table. Also accepts
     biom-formatted OTU tables. This workflow will skip otu tables with
@@ -344,7 +381,7 @@ def merge_otu_tables(files_list, name):
     def merge_filter(deps,targets):
         files = [file for file in deps
                  if os.path.exists(file) and os.stat(file).st_size > 0] 
-        cmd = "qiime_cmd merge_otu_tables.py -i {filenames} -o {output}"
+        cmd = "merge_otu_tables.py -i {filenames} -o {output}"
         cmd = cmd.format( filenames = ",".join(files), 
                           output    = name  )
         return CmdAction(cmd, verbose=True).execute()
@@ -357,8 +394,9 @@ def merge_otu_tables(files_list, name):
     }
 
 
-@requires(binaries=['picrust_cmd', 'biom'],
-          version_methods=["picrust_cmd print_picrust_config.py "
+@requires(binaries=['normalize_by_copy_number.py', 'predict_metagenomes.py',
+                    'biom'],
+          version_methods=["print_picrust_config.py "
                            "| awk '/PICRUSt version/{print $NF;}'"])
 def picrust(file, output_dir=None, verbose=True, **opts):
     """Workflow to predict metagenome functional content from 16S OTU tables.
@@ -387,10 +425,39 @@ def picrust(file, output_dir=None, verbose=True, **opts):
 
     all_opts = { 'tab_in'          : 0,  'tab_out' : 0,
                  'gg_version'      : '', 't'       : '', 
-                 'with_confidence' : 0,  'custom'  : '' }
+                 'with_confidence' : 0,  'custom'  : '',
+                 'drop_unknown'    : True}
     all_opts.update(opts)
+    drop_unknown = all_opts.pop("drop_unknown", True)
 
-    cmd1 = ("picrust_cmd normalize_by_copy_number.py "
+    _copy_fname = settings.workflows.picrust.copy_number
+    def _drop_unknown():
+        import os
+        import gzip
+        import json
+        from biom.table import DenseOTUTable
+        from biom.parse import (
+            OBS_META_TYPES,
+            parse_biom_table,
+            parse_classic_table_to_rich_table
+        )
+        idx = set([ row.strip().split('\t')[0]
+                    for row in gzip.open(_copy_fname) ])
+        filter_func = lambda a, otu_id, c: str(otu_id) in idx
+        tmpfile = file+"_tmp.biom"
+        with open(file) as f, open(tmpfile, 'w') as f_out:
+            try:
+                table = parse_biom_table(f)
+            except Exception as e:
+                table = parse_classic_table_to_rich_table(
+                    f, None, None, OBS_META_TYPES['taxonomy'], DenseOTUTable)
+            table = table.filterObservations(filter_func)
+            json.dump( table.getBiomFormatObject("AnADAMA"), f_out )
+        os.rename(file, addtag(file, "unfiltered"))
+        os.rename(tmpfile, file)
+
+
+    cmd1 = ("normalize_by_copy_number.py "
             + "-i %s"
             + " -o " + norm_out)
     if all_opts['gg_version']:
@@ -398,7 +465,7 @@ def picrust(file, output_dir=None, verbose=True, **opts):
     if all_opts['tab_in']:
         cmd1 += " -f"
 
-    cmd2 = ("picrust_cmd predict_metagenomes.py "
+    cmd2 = ("predict_metagenomes.py "
             + "-i %s"
             + " -o " + predict_out)
     if all_opts['gg_version']:
@@ -434,9 +501,12 @@ def picrust(file, output_dir=None, verbose=True, **opts):
                               CmdAction(cmd2%(norm_out), verbose=verbose)))
         )
              
+    actions = [run]
+    if drop_unknown:
+        actions = [_drop_unknown, run]
 
     return dict(name = "picrust:"+predict_out,
-                actions = [run],
+                actions = actions,
                 file_dep = [file],
                 targets = [predict_out, norm_out])
 

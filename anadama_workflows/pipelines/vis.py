@@ -45,7 +45,17 @@ class VisualizationPipeline(Pipeline, SampleMetadataMixin):
     }
 
     default_options = {
-        'stacked_bar_chart': { }
+        'stacked_bar_chart':     { },
+        'breadcrumbs_pcoa_plot': {
+            "meta"       : True,
+            "id"         : True,
+            "noShape"    : True,
+        },
+    }
+
+    workflows = {
+        'stacked_bar_chart':     visualization.stacked_bar_chart,
+        'breadcrumbs_pcoa_plot': visualization.breadcrumbs_pcoa_plot
     }
 
     def __init__(self, sample_metadata,
@@ -113,7 +123,9 @@ class VisualizationPipeline(Pipeline, SampleMetadataMixin):
         for otu_table in self.merged_otu_tables:
             barchart_path = util.new_file(
                 otu_table+"_barcharts", basedir=self.products_dir)
-            yield visualization.stacked_bar_chart(otu_table, barchart_path)
+            yield visualization.stacked_bar_chart(
+                otu_table, barchart_path,
+                **self.options.get('stacked_bar_chart', {}))
 
             tsv_filename = otu_table+".tsv"
             yield association.biom_to_tsv(otu_table, tsv_filename)
@@ -130,5 +142,6 @@ class VisualizationPipeline(Pipeline, SampleMetadataMixin):
         for pcl_file in self.pcl_files:
             yield visualization.breadcrumbs_pcoa_plot(
                 pcl_file, pcl_file+"_pcoa_plot.png",
-                CoordinatesMatrix = pcl_file+"_pcoa_coords.txt"
+                CoordinatesMatrix = pcl_file+"_pcoa_coords.txt",
+                **self.options.get('breadcrumbs_pcoa_plot', {})
             )
