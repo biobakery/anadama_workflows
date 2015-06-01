@@ -255,22 +255,29 @@ def cat(input_files, output_file):
         "targets": [output_file]
     }
 
-def group_by_sampleid(large_fasta, output_dir, sample_ids):
-    output_fnames = [ os.path.join(output_dir, s+"_demuxed.fa")
+def group_by_sampleid(large_fastas, output_dir, sample_ids):
+    output_fnames = [ new_file(s+"_demuxed.fa", basedir=output_dir)
                       for s in sample_ids ]
+
+    if type(large_fastas) is str:
+        large_fastas = [large_fastas]
 
     def _run():
         import contextlib
         from Bio import SeqIO
+        from itertools import chain
+        records = chain.from_iterable( iter(SeqIO.parse(fname, "fasta")
+                                            for fname in large_fastas) )
+        
         files = dict([ (s_id, open(f, 'w'))
                        for f, s_id in zip(output_fnames, sample_ids)])
         with contextlib.nested(*list(files.values())):
-            for rec in SeqIO.parse(large_fasta, 'fasta'):
-                sample_id = rec.id.split("_", 1)[0]
+            for rec in records:
+                sample_id = "_".join(rec.id.split("_")[:-2])
                 SeqIO.write(rec, files[sample_id], "fasta")
 
-    return { "name": "group_by_sampleid: "+large_fasta,
+    return { "name": "group_by_sampleid: "+large_fastas[0],
              "actions": [_run],
              "targets": output_fnames,
-             "file_dep": [large_fasta] }
+             "file_dep": large_fastas }
                 

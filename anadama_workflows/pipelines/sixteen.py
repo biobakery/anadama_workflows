@@ -55,15 +55,16 @@ class DemultiplexMixin(object):
                 [seqfile], [bcode_file], map_fname, outfile,
                 qiime_opts=options
             ) )
-            if do_groupby:
-                sample_ids = [ s[0] for s in sample_group ]
-                task_dict = general.group_by_sampleid(
-                    outfile, sample_dir, sample_ids
+            demuxed.append(outfile)
+
+        if do_groupby:
+            output_dir = join(self.products_dir, "demuxed_by-sampleid")
+            sample_ids = [ s[0] for s in sample_group ]
+            task_dict = general.group_by_sampleid(
+                demuxed, output_dir, sample_ids
                 )
-                demuxed.extend(task_dict['targets'])
-                tasks.append(task_dict)
-            else:
-                demuxed.append(outfile)
+            demuxed = task_dict['targets']
+            tasks.append(task_dict)
 
         return demuxed, tasks
             
