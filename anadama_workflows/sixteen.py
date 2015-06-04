@@ -495,10 +495,10 @@ def picrust(file, output_dir=None, verbose=True, **opts):
 
         return strategies.backup(
             (strategies.Group(CmdAction(cmd1%(file), verbose=verbose),
-                              CmdAction(cmd2%(file), verbose=verbose)),
+                              CmdAction(cmd2%(norm_out), verbose=verbose)),
              strategies.Group(format_cmd,
                               CmdAction(cmd1%(converted), verbose=verbose),
-                              CmdAction(cmd2%(converted), verbose=verbose)))
+                              CmdAction(cmd2%(norm_out), verbose=verbose)))
         )
              
     actions = [run]
