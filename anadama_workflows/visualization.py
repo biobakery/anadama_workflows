@@ -42,7 +42,7 @@ def stacked_bar_chart(biom_fname, output_dir, qiime_opts=dict()):
 
     target = os.path.join(
         output_dir,
-        addtag( os.path.basename(biom_fname), "L1")
+        addtag( os.path.basename(biom_fname), "L2")
     )
 
     yield {
