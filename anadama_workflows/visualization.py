@@ -105,8 +105,10 @@ def breadcrumbs_pcoa_plot(pcl_fname, output_plot_fname, **opts):
             return prev_line.split('\t')[0]
 
     def run(pcoa_cmd=pcoa_cmd):
-        default_opts['meta'] = default_opts['meta'] or last_meta_name(pcl_fname)
-        default_opts['id'] = default_opts['id'] or sample_id(pcl_fname)
+        if default_opts['meta'] is True or not default_opts['meta']:
+            default_opts['meta'] = last_meta_name(pcl_fname)
+        if default_opts['id'] is True or not default_opts['id']:
+            default_opts['id'] = sample_id(pcl_fname)
         pcoa_cmd += dict_to_cmd_opts(default_opts)
         pcoa_cmd += " "+pcl_fname+" "
         return CmdAction(pcoa_cmd, verbose=True).execute()
