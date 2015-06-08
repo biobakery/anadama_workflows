@@ -169,15 +169,14 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
                 
 
         for fastq_file in self.intermediate_fastq_files:
-            name_base = os.path.join(self.products_dir,
-                                     basename(fastq_file))
-            name_base = util.rmext(name_base, all=True)
+            name_base = util.new_file(util.rmext(fastq_file, all=True),
+                                      basedir=self.products_dir)
             task_dict = next(wgs.knead_data(
                 [fastq_file], name_base,
                 **self.options.get('decontaminate', {})
             ))
-            decontaminated_fastq = first_half(task_dict['targets'])
-            self.decontaminated_fastq_files.extend(decontaminated_fastq)
+            decontaminated_fastq = task_dict['targets'][0]
+            self.decontaminated_fastq_files.append(decontaminated_fastq)
             yield task_dict
 
         for d_fastq in self.decontaminated_fastq_files:
