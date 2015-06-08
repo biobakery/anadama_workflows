@@ -33,7 +33,7 @@ def stacked_bar_chart(biom_fname, output_dir, qiime_opts=dict()):
            "-i {} -o {} ".format(biom_fname, output_dir))
     
     default_opts = {
-        "force": ""
+        "force": True
     }
     default_opts.update(qiime_opts)
     
