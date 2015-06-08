@@ -57,16 +57,18 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
         },
         'sequence_convert': { },
         'decontaminate':    {
-            "trim-args": "'LEADING:3 TRAILING:3'"
+            "strategy": "memory"
         },
         'metaphlan2':       {
-            'bt2_ps': 'very-sensitive'
+            'bt2_ps': 'very-sensitive',
+            "nproc" : str(util.max_cpus),
         },
         'humann':           {
             "memory-use"         : "minimum",
             "log-level"          : "INFO",
             "remove-temp-output" : True,
-            "output-format"      : "tsv"
+            "output-format"      : "tsv",
+            "threads"            : str(util.max_cpus),
         }
     }
 
