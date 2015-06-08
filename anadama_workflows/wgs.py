@@ -189,42 +189,50 @@ def knead_data(infiles, output_basestr, **opts):
     :param output_basestr: String; Path to the directory and base
       filename where the output cleaned sequences will be saved.
 
-    
+
     External dependencies:
       - `knead_data.py <https://bitbucket.org/biobakery/kneaddata>`_
       - `bowtie2 <http://bowtie-bio.sourceforge.net/index.shtml>`_
 
     Resource utilization:
-      - RAM: 3 G
+      - RAM: 4 G
 
     """
     
+    path, base = os.path.split(output_basestr)
     default_opts = {
-        "output-prefix": output_basestr,
+        "output-prefix": base,
+        "output-dir": output_basestr+"_knead",
         "reference-db": settings.workflows.knead.reference_db,
-        "trim-path": settings.workflows.knead.trim_path,
-        "trim-args": "'LEADING:3 TRAILING:3'"
+        "strategy": "memory",
+        "logging": "WARNING"
     }
     default_opts.update(opts)
     
-    db_base = os.path.basename(settings.workflows.knead.reference_db)
-    def _targ(status_tag, num_tag=None):
-        if num_tag:
-            base = "_".join([output_basestr, db_base, status_tag, num_tag])
-        else:
-            base = "_".join([output_basestr, db_base, status_tag])
-        return base+".fastq"
+    def _targets(nums=[None]):
+        outdir = default_opts['output-dir']
+        prefix = default_opts['output-prefix']
+        yield os.path.join(outdir, prefix+".fastq")
+        for num in nums:
+            db_bases = map(os.path.basename, default_opts['reference-db'])
+            for db_base in db_bases:
+                to_join = [prefix, db_base, num, "contam.fastq"]
+                n = "_".join(filter(bool, to_join))
+                yield os.path.join(outdir, n)
 
-    infiles_list = list(infiles)
+    if type(infiles) in (unicode, str):
+        infiles_list = [infiles]
+    else:
+        infiles_list = list(infiles)
+
     if len(infiles_list) > 1:
         one, two = infiles_list
         default_opts['1'] = one
         default_opts['2'] = two
-        targets = [ _targ("clean", "1"), _targ("clean", "2"),
-                    _targ("contam", "1"), _targ("contam", "2") ]
+        targets = list(_targets(nums=[1,2]))
     else:
         default_opts['1'] = infiles_list[0]
-        targets = [ _targ("clean"), _targ("contam") ]
+        targets = list(_targets())
 
     cmd = "knead_data.py " + dict_to_cmd_opts(default_opts)
 

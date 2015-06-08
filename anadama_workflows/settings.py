@@ -13,8 +13,9 @@ class workflows:
     class picrust:
         copy_number = base+"src/picrust-1.0.0/picrust/data/16S_13_5_precalculated.tab.gz"
     class knead:
-        reference_db = base+"databases/bowtie2/humanGRCh38"
-        trim_path = base+"src/Trimmomatic-0.33/trimmomatic-0.33.jar"
+        reference_db = [
+            base+"databases/bowtie2/human/humanGRCh38"
+        ]
 
     class subread:
         index = "/vagrant/data/subread/GRCh38"
