@@ -135,24 +135,21 @@ def metaphlan2(files_list, **opts):
       - Ram: 1.5-3.0G
 
     """
-
-    seqtype = guess_seq_filetype(files_list[0])
-    if seqtype not in ('fasta', 'fastq'):
-        raise ValueError("Need sequences in fasta or fastq format")
-
     def_base = opts.get("output_file") or files_list[0]
-    def_outfile    = new_file(addext(def_base, "metaphlan2"))
-    def_bowtie2out = new_file(addext(def_base, "bowtie2out.txt"))
-
     all_opts = { 'bt2_ps'      : 'very-sensitive',
                  'bowtie2db'   : settings.workflows.metaphlan2.bowtie2db,
                  'mpa_pkl'     : settings.workflows.metaphlan2.mpa_pkl,
-                 "bowtie2out"  : def_bowtie2out,
-                 "output_file" : def_outfile,
-                 "input_type"  : biopython_to_metaphlan[seqtype]  }
-
+                 "bowtie2out"  : new_file(addext(def_base, "bowtie2out.txt")),
+                 "output_file" : new_file(addext(def_base, "metaphlan2")) }
     all_opts.update(opts)
     
+    if 'input_type' not in all_opts:
+        guessed = guess_seq_filetype(files_list[0])
+        if guessed not in ('fasta', 'fastq'):
+            raise ValueError("Need sequences in fasta or fastq format, "
+                             "or provide keyword 'input_type'")
+        all_opts['input_type'] = biopython_to_metaphlan[guessed]
+
     cmd = starters.cat(files_list, guess_from=files_list[0])
     cmd += (" | metaphlan2.py"
             + " "+dict_to_cmd_opts(all_opts) )
