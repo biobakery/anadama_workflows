@@ -191,6 +191,7 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
                 # second index is to get the sample id from the sample
                 sample_id=self._filter_samples_for_file(self.sample_metadata,
                                                         d_fastq)[0][0],
+                input_type="multifastq",
                 **self.options.get('metaphlan2', dict())
             )
             self.metaphlan_results.append(metaphlan_file)
