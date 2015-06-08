@@ -92,11 +92,11 @@ def humann2(seqfile_in, output_dir, **opts):
         "o-log"              : os.path.join(output_dir, "humann2_log.txt"),
         "memory-use"         : "minimum",
         "log-level"          : "INFO",
-        "remove-temp-output" : "",
+        "remove-temp-output" : True,
         "output-format"      : "tsv"
     }
     default_opts.update(opts)
-    opts_str = dict_to_cmd_opts(default_opts, sep=" ")
+    opts_str = dict_to_cmd_opts(default_opts, longsep=" ")
 
     cmd = "humann2 " + opts_str
 
