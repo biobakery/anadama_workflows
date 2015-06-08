@@ -198,7 +198,10 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
             self.otu_tables.append(otu_table)
 
             # Finally, HUMAnN all alignment files
-            humann_output_dir = d_fastq+"_humann"
+            humann_output_dir = util.new_file(
+                util.rmext(basename(d_fastq), all=True)+"_humann",
+                basedir=self.products_dir
+            )
             yield wgs.humann2( d_fastq, humann_output_dir, 
                                **self.options.get('humann', dict()) )
             
