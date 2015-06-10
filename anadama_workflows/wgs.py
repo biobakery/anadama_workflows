@@ -55,10 +55,29 @@ def humann(infiles_list, workdir):
         ]
     }
         
+_humann2_default_dbs = None
+def _get_humann2_dbs(opts_d):
+    global _humann2_default_dbs
+    if ("chocophlan" not in opts_d or "uniref" not in opts_d) \
+       and not _humann2_default_dbs:
+        from re import findall
+        from subprocess import check_output
+        _humann2_default_dbs = findall(r'DEFAULT: (.+uniref|.+chocophlan)]',
+                                       check_output(["humann2", "-h"]))
+
+    if "chocophlan" not in opts_d and "uniref" not in opts_d:
+        return _humann2_default_dbs
+    elif "chocophlan" not in opts_d and 'uniref' in opts_d:
+        return _humann2_default_dbs[0], opts_d['uniref']
+    elif "chocophlan" in opts_d and 'uniref' not in opts_d:
+        return opts_d['chocophlan'], _humann2_default_dbs[1]
+    else: # both uniref and chocophlan are in opts_d
+        return opts_d['chocophlan'], opts_d['uniref']
+
 
 @requires(binaries=['humann2'],
           version_methods=['humann2 --version'])
-def humann2(seqfile_in, output_dir, **opts):
+def humann2(seqfile_in, output_dir, scratch=None, **opts):
     """Workflow to find pathway and gene lists grouped by organism from
     raw whole genome shotgun reads.
 
@@ -96,9 +115,6 @@ def humann2(seqfile_in, output_dir, **opts):
         "output-format"      : "tsv"
     }
     default_opts.update(opts)
-    opts_str = dict_to_cmd_opts(default_opts, longsep=" ")
-
-    cmd = "humann2 " + opts_str
 
     suffix = default_opts['output-format']
     def _join(s):
@@ -110,17 +126,39 @@ def humann2(seqfile_in, output_dir, **opts):
                           "pathcoverage", 
                           "pathabundance"))
 
+    if scratch:
+        old_out = default_opts['output']
+        default_opts.pop('output', None)
+        dbs = _get_humann2_dbs(default_opts)
+        default_opts.pop('chocophlan', None), default_opts.pop('uniref', None)
+        cmd = "humann2 " + dict_to_cmd_opts(default_opts, longsep=" ")
+        actions = [
+            """ tdir=$(mktemp -d -p {sdir});
+                cd ${{tdir}}; 
+                mkdir -pv ${{tdir}}/dbs;
+                cp -rv {dbs} ${{tdir}}/dbs/;
+                {humann2} --output ${{tdir}} \
+                          --chocophlan ${{tdir}}/dbs/chocophlan \
+                          --uniref ${{tdir}}/dbs/uniref;
+                mv -iv ${{tdir}}/*.* {final_out};
+                rm -rvf ${{tdir}};
+            """.format(sdir=scratch, dbs=" ".join(dbs),
+                       humann2=cmd, final_out=old_out)
+        ]
+    else:
+        actions = ["humann2 " + dict_to_cmd_opts(default_opts, longsep=" ")]
+
     return {
         "name"     : "humann2:"+output_dir,
         "file_dep" : [seqfile_in],
         "targets"  : targets,
-        "actions"  : [cmd]
+        "actions"  : actions
     }
 
 
 @requires(binaries=['metaphlan2.py'], 
           version_methods=['metaphlan2.py --version'])
-def metaphlan2(files_list, **opts):
+def metaphlan2(files_list, scratch=None, **opts):
     """Workflow to perform taxonomic profiling from whole metagenome
     shotgun sequences. Additional keyword options are used directly as
     bowtie2 command-line flags.
@@ -150,24 +188,46 @@ def metaphlan2(files_list, **opts):
                              "or provide keyword 'input_type'")
         all_opts['input_type'] = biopython_to_metaphlan[guessed]
 
-    cmd = starters.cat(files_list, guess_from=files_list[0])
-    cmd += (" | metaphlan2.py"
-            + " "+dict_to_cmd_opts(all_opts) )
 
     targets = [all_opts['output_file'], all_opts['bowtie2out']]
     if 'biom' in opts:
         targets.append(opts['biom'])
 
+    cmd = starters.cat(files_list, guess_from=files_list[0])
+    if scratch:
+        db, pkl = all_opts['bowtie2db'], all_opts['mpa_pkl']
+        all_opts.pop('bowtie2db', None), all_opts.pop('mpa_pkl', None)
+        dbbase, pklbase = map(os.path.basename, (db, pkl))
+        cmd += (" | metaphlan2.py"
+                + " "+dict_to_cmd_opts(all_opts) )
+        actions = [
+            """ tdir=$(mktemp -d -p {sdir});
+                cd ${{tdir}};
+                mkdir -pv ${{tdir}}/dbs;
+                cp {db}* {pkl} ${{tdir}}/dbs;
+                {cmd} --mpa_pkl ${{tdir}}/dbs/{pklbase} \
+                      --bowtie2db ${{tdir}}/dbs/{dbbase};
+                rm -rvf ${{tdir}};
+            """.format(sdir=scratch, pkl=pkl, db=db, cmd=cmd,
+                       pklbase=pklbase, dbbase=dbbase)
+        ]
+    else:
+        cmd += (" | metaphlan2.py"
+                + " "+dict_to_cmd_opts(all_opts) )
+        actions = [cmd]
+    
+
     return dict(name     = "metaphlan2:"+all_opts['output_file'],
-                actions  = [cmd],
+                actions  = actions,
                 file_dep = files_list,
                 targets  = targets )
+
 
 
 @requires(binaries=['knead_data.py', 'bowtie2'],           
           version_methods=["pip freeze | grep knead_datalib",
                            "bowtie2 --version  |head"])
-def knead_data(infiles, output_basestr, **opts):
+def knead_data(infiles, output_basestr, scratch=None, **opts):
     """Workflow to sanitize host data and otherwise quality filter
     metagenomic reads. Input sequences are mapped against a host
     database using bowtie2; any sequences that map back to the host
@@ -206,12 +266,12 @@ def knead_data(infiles, output_basestr, **opts):
     }
     default_opts.update(opts)
     
+    db_bases = map(os.path.basename, default_opts['reference-db'])
     def _targets(nums=[None]):
         outdir = default_opts['output-dir']
         prefix = default_opts['output-prefix']
         yield os.path.join(outdir, prefix+".fastq")
         for num in nums:
-            db_bases = map(os.path.basename, default_opts['reference-db'])
             for db_base in db_bases:
                 to_join = [prefix, db_base, num, "contam.fastq"]
                 n = "_".join(filter(bool, to_join))
@@ -231,7 +291,24 @@ def knead_data(infiles, output_basestr, **opts):
         default_opts['1'] = infiles_list[0]
         targets = list(_targets())
 
-    cmd = "knead_data.py " + dict_to_cmd_opts(default_opts)
+    if scratch:
+        db_patterns = " ".join(s+"*" for s in default_opts['reference-db'])
+        db_printf_cmds = " ".join([
+            '--reference-db "${{tdir}}/dbs/{}"'.format(db)
+            for db in db_bases
+        ])
+        default_opts.pop("reference-db", None)
+        knead = "knead_data.py " + dict_to_cmd_opts(default_opts)
+        cmd = """ tdir=$(mktemp -d -p {sdir});
+                  cd ${{tdir}};
+                  mkdir -pv ${{tdir}}/dbs;
+                  cp {db_patterns} ${{tdir}}/dbs/;
+                  {knead} {db_printf_cmds};
+                  rm -rvf ${{tdir}};
+        """.format(sdir=scratch, db_patterns=db_patterns,
+                  knead=knead, db_printf_cmds=db_printf_cmds)
+    else:
+        cmd = "knead_data.py " + dict_to_cmd_opts(default_opts)
 
     return {
         "name": "knead_data:"+output_basestr,
