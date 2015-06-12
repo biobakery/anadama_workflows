@@ -1,4 +1,6 @@
-import os.path
+import os
+from math import log
+from glob import glob
 
 from anadama.decorators import requires
 from anadama.util import addtag, addext, guess_seq_filetype
@@ -148,11 +150,24 @@ def humann2(seqfile_in, output_dir, scratch=None, **opts):
     else:
         actions = ["humann2 " + dict_to_cmd_opts(default_opts, longsep=" ")]
 
+
+    def _perfhint(task):
+        threads = default_opts.get('threads', 1)
+        insize = os.stat(seqfile_in).st_size
+        est_reads = insize/100/10e5
+        return "{n} estimated mem={mem} time={time}, threads={threads}".format(
+            n=task.name,
+            mem=5 + (3.5*log(est_reads)),
+            time=3.5 + ((2*est_reads)/threads),
+            threads=threads)
+
+        
     return {
         "name"     : "humann2:"+output_dir,
         "file_dep" : [seqfile_in],
         "targets"  : targets,
-        "actions"  : actions
+        "actions"  : actions,
+        "title"    : _perfhint
     }
 
 
@@ -216,11 +231,21 @@ def metaphlan2(files_list, scratch=None, **opts):
                 + " "+dict_to_cmd_opts(all_opts) )
         actions = [cmd]
     
+    def _perfhint(task):
+        threads = all_opts.get('nproc', 1)
+        insize = sum(os.stat(f).st_size for f in files_list)
+        return "{n} estimated mem={mem} time={time}, threads={threads}".format(
+            n=task.name,
+            mem=1.5*1024,
+            time=15+(insize/1.2e9/(threads)),
+            threads=threads)
+
 
     return dict(name     = "metaphlan2:"+all_opts['output_file'],
                 actions  = actions,
                 file_dep = files_list,
-                targets  = targets )
+                targets  = targets,
+                title    = _perfhint,)
 
 
 
@@ -310,9 +335,23 @@ def knead_data(infiles, output_basestr, scratch=None, **opts):
     else:
         cmd = "knead_data.py " + dict_to_cmd_opts(default_opts)
 
+    def _perfhint(task):
+        threads = default_opts.get('threads', 1)
+        insize = sum(os.stat(f).st_size for f in infiles)
+        dbsize = sum(os.stat(f).st_size
+                     for pat in default_opts['reference-db']
+                     for f in glob(pat+"*"))
+        return "{n} estimated mem={mem} time={time}, threads={threads}".format(
+            n=task.name,
+            mem=dbsize/1024/1024,
+            time=60+(insize/9e8/(threads)),
+            threads=threads)
+
+        
     return {
         "name": "knead_data:"+output_basestr,
         "targets": targets,
         "file_dep": infiles_list,
-        "actions": [cmd]
+        "actions": [cmd],
+        "title": _perfhint,
     }
