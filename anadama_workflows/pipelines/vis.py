@@ -105,7 +105,6 @@ class VisualizationPipeline(Pipeline, SampleMetadataMixin):
                 
 
     def _configure(self):
-
         if self.otu_tables:
             merged_name = util.addtag(self.otu_tables[0], "merged")
             merged_file = util.new_file(merged_name, basedir=self.products_dir)
