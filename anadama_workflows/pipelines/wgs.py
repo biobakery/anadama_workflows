@@ -81,7 +81,7 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
     }
 
 
-    def __init__(self, sample_metadata,
+    def __init__(self, sample_metadata=list(),
                  raw_seq_files=list(), 
                  intermediate_fastq_files=list(),
                  decontaminated_fastq_files=list(),

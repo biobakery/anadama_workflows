@@ -175,7 +175,7 @@ class SixteenSPipeline(Pipeline, DemultiplexMixin, SampleFilterMixin,
     }
 
     def __init__(self,
-                 sample_metadata,
+                 sample_metadata=list(),
                  raw_seq_files=list(),
                  barcode_seq_files=list(),
                  demuxed_fasta_files=list(), # assumed to be QC'd

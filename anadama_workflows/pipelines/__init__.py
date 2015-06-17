@@ -59,24 +59,26 @@ class SampleMetadataMixin(object):
 
     def _unpack_metadata(self, default=None):
         samples = []
+        if not self.sample_metadata:
+            if default:
+                self.sample_metadata = default()
+            else:
+                raise ValueError("Unable to read map.txt file. Empty file.")
         if type(self.sample_metadata) is str:
-            self.sample_metadata = [self.sample_metadata]
-        if type(self.sample_metadata[0]) is str:
+            self.sample_metadata = list(
+                util.deserialize_map_file(self.sample_metadata)
+            )
+        elif type(self.sample_metadata[0]) is str:
             metadata_files = map(open, self.sample_metadata)
             with contextlib.nested(*metadata_files):
                 samples = list( chain.from_iterable(
                     map(util.deserialize_map_file, metadata_files)
                 ))
-        if str(self.sample_metadata[0]).startswith("Sample"):
-            samples = self.sample_metadata
-                
-        if not samples:
-            if default:
-                self.sample_metadata = default()
-            else:
-                raise ValueError("Unable to read map.txt file. Empty file.")
+        elif str(self.sample_metadata[0]).startswith("Sample"):
+            pass
         else:
-            self.sample_metadata = samples
+            raise ValueError('Unable to understand metadata, received '
+                             +repr(self.sample_metadata))
 
 
     def _get_or_create_sample_metadata(self):
