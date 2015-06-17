@@ -10,10 +10,23 @@ from anadama.util import addtag
 from . import settings
 from .sixteen import assign_taxonomy
 
+statsum = lambda fs: sum(os.stat(f).st_size for f in fs)
+
 def usearch_dict_flags(opts_dict):
     opts = [ " -%s %s " %(key, val) 
              for key, val in opts_dict.iteritems() ]
     return " ".join(opts)
+
+def usearch_rusage(input_seqs, time_multiplier=1, threads=1):
+    def _titlefunc(task):
+        msg = task.name+(" Estimated mem={mem:.2f} "
+                         "time={time:i} threads={time:i}")
+        return msg.format(
+            mem=100 + (statsum(task.file_dep)/1024/1024.),
+            time=10 + (statsum(input_seqs)*5e-7*time_multiplier),
+            threads=threads
+        )
+    return _titlefunc
 
 
 @requires(binaries=['usearch7', 'sequence_pair'],
@@ -105,7 +118,8 @@ def stitch(input_fastq_pair, output_fastq, verbose=True,
     return { "name"    : "usearch_stitch: "+output_fastq,
              "actions" : [run],
              "file_dep": input_fastq_pair,
-             "targets" : [output_fastq] }
+             "targets" : [output_fastq],
+             "title"   : usearch_rusage(input_fastq_pair)}
 
 
 @requires(binaries=['usearch7'],
@@ -153,7 +167,8 @@ def filter(input_fastq, output_fasta, verbose=True, **opts):
     return { "name"     : "usearch_filter: "+output_fasta,
              "actions"  : [run],
              "file_dep" : [input_fastq],
-             "targets"  : [output_fasta] }
+             "targets"  : [output_fasta],
+             "title"   : usearch_rusage([input_fastq])}
 
 
 @requires(binaries=["usearch8"],
@@ -178,7 +193,8 @@ def truncate(fastx_in, fasta_out=None, fastq_out=None, **opts):
     return { "name": "usearch_truncate: "+out,
              "actions": [cmd],
              "targets": [out],
-             "file_dep": [fastx_in] }
+             "file_dep": [fastx_in],
+             "title"   : usearch_rusage([fastx_in]) }
 
 
 @requires(binaries=["usearch8", "uclust_otutable"],
@@ -255,7 +271,8 @@ def pick_denovo_otus(fasta_in, otutab_out, remove_tempfiles=True,
     return { "name"     : "usearch_pick_denovo_otus: "+otutab_out,
              "actions"  : actions,
              "file_dep" : [fasta_in],
-             "targets"  : [otutab_out, chimera_out] }
+             "targets"  : [otutab_out, chimera_out],
+             "title"   : usearch_rusage([fasta_in]) }
 
 
 @requires(binaries=["usearch8", "biom"])
@@ -360,9 +377,11 @@ def pick_otus_closed_ref(in_fasta, out_biom,
         cmd = "rm -rf "+tmpfolder
         actions.append(cmd)
 
+    file_dep = [in_fasta, denovo_otutab, nonchimera, ref_fasta]
     yield { "name": "usearch_pick_otus_closed_ref: "+out_biom,
             "targets": [out_biom],
             "actions": actions,
-            "file_dep": [in_fasta, denovo_otutab, nonchimera] }
+            "file_dep": [in_fasta, denovo_otutab, nonchimera],
+            "title"   : usearch_rusage(file_dep)}
     
 

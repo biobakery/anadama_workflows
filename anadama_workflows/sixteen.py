@@ -59,7 +59,8 @@ def write_map(sample_group, sample_dir):
     return {
         "name": "write_map:"+map_fname,
         "actions": [_write],
-        "targets": [map_fname]
+        "targets": [map_fname],
+        "title": lambda t: t.name+" Estimated mem=200 time=5 threads=1"
     }
 
 
@@ -113,7 +114,9 @@ def demultiplex(map_fname, fasta_fname, qual_fname, output_fname,
         "name": "demultiplex:"+fasta_fname,
         "actions": actions,
         "file_dep": [map_fname, fasta_fname, qual_fname],
-        "targets": [output_fname]
+        "targets": [output_fname],
+        "title": lambda t: t.name+" Estimated time=%.2f"%(
+            sum(os.stat(f).st_size for f in t.file_dep)/1024./1024/5)
     }
 
 
@@ -180,7 +183,9 @@ def demultiplex_illumina(fastq_fnames, barcode_fnames, map_fname, output_fname,
         "name": "demultiplex_illumina:"+output_fname,
         "actions": actions,
         "file_dep": list(fastq_fnames) + list(barcode_fnames) + [map_fname],
-        "targets": [output_fname]
+        "targets": [output_fname],
+        "title": lambda t: t.name+" Estimated time=%.2f"%(
+            sum(os.stat(f).st_size for f in t.file_dep)/1024./1024/5)
     }
 
 
@@ -260,7 +265,8 @@ def pick_otus_closed_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
         "name": "pick_otus_closed_ref:"+input_fname,
         "actions": [run],
         "targets": [output_fname],
-        "file_dep": [input_fname]
+        "file_dep": [input_fname],
+        "title": lambda t: t.name+" Estimated mem=3000"
     }
 
 
@@ -359,7 +365,7 @@ def pick_otus_open_ref(input_fname, output_dir, verbose=None, qiime_opts={}):
         "name": "pick_otus_open_ref:"+input_fname,
         "actions": [run],
         "targets": [output_fname],
-        "file_dep": [input_fname]
+        "file_dep": [input_fname],
     }
 
 
@@ -505,8 +511,19 @@ def picrust(file, output_dir=None, verbose=True, **opts):
     if drop_unknown:
         actions = [_drop_unknown, run]
 
-    return dict(name = "picrust:"+predict_out,
-                actions = actions,
-                file_dep = [file],
-                targets = [predict_out, norm_out])
+    def _rusage(task):
+        msg = task.name+" Estimated mem={mem} time={time} threads=1"
+        s = os.stat(list(task.file_dep)[0]).st_size
+        return msg.format(
+            mem=100+(s/1024.),
+            time=100+(s*2.5e-4)
+        )
+        
+    return dict(
+        name = "picrust:"+predict_out,
+        actions = actions,
+        file_dep = [file],
+        targets = [predict_out, norm_out],
+        title = _rusage,
+    )
 
