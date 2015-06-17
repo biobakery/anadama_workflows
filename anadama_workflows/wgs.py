@@ -157,8 +157,8 @@ def humann2(seqfile_in, output_dir, scratch=None, **opts):
         est_reads = insize/100/10e5
         return "{n} Estimated mem={mem:.0f} time={time:.0f}, threads={threads:.0f}".format(
             n=task.name,
-            mem=5 + (3.5*log(est_reads)),
-            time=3.5 + ((2*est_reads)/threads),
+            mem=(5 + (3.5*log(est_reads)))*1024,
+            time=(3.5 + ((2*est_reads)/threads))*60,
             threads=threads)
 
         
