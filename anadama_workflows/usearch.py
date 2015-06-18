@@ -20,7 +20,7 @@ def usearch_dict_flags(opts_dict):
 def usearch_rusage(input_seqs, time_multiplier=1, threads=1):
     def _titlefunc(task):
         msg = task.name+(" Estimated mem={mem:.2f} "
-                         "time={time:i} threads={time:i}")
+                         "time={time:.0f} threads={time:.0f}")
         return msg.format(
             mem=100 + (statsum(task.file_dep)/1024/1024.),
             time=10 + (statsum(input_seqs)*5e-7*time_multiplier),
