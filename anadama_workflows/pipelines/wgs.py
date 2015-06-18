@@ -137,8 +137,11 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
 
         def _default_metadata():
             cls = namedtuple("Sample", ['SampleID'])
-            return [ cls(basename(util.rmext(f, all=True)))
-                     for f in raw_seq_files ]
+            for seq_attr in self.sequence_attrs:
+                maybe_seqs = getattr(self, seq_attr, None)
+                if maybe_seqs:
+                    return [ cls(basename(util.rmext(f, all=True)))
+                             for f in maybe_seqs ]
         self._unpack_metadata(default = _default_metadata)
 
 

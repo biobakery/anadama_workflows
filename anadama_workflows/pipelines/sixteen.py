@@ -2,7 +2,7 @@ import os
 import re
 from os.path import join, basename
 from operator import itemgetter
-from collections import Counter
+from collections import Counter, namedtuple
 from itertools import groupby, izip_longest
 
 from anadama import util
@@ -219,6 +219,17 @@ class SixteenSPipeline(Pipeline, DemultiplexMixin, SampleFilterMixin,
                           barcode_seq_files   = barcode_seq_files,
                           demuxed_fasta_files = demuxed_fasta_files,
                           otu_tables          = otu_tables)
+
+
+        maybe_seqs = (self.raw_seq_files, self.demuxed_fasta_files)
+        def _default_metadata():
+            cls = namedtuple("Sample", ['SampleID'])
+            for seq_list in filter(bool, maybe_seqs):
+                # return the first one that contains filenames
+                return [ cls(basename(util.rmext(f, all=True)))
+                         for f in seq_list ]
+
+        self._unpack_metadata(default = _default_metadata)
 
         self._unpack_metadata()
 
