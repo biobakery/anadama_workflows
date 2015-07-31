@@ -3,7 +3,7 @@ from math import log
 from glob import glob
 
 from anadama.decorators import requires
-from anadama.util import addtag, addext, guess_seq_filetype
+from anadama.util import addtag, addext, guess_seq_filetype, memoized
 from anadama.util import biopython_to_metaphlan, dict_to_cmd_opts, new_file
 
 from . import (
@@ -58,6 +58,7 @@ def humann(infiles_list, workdir):
     }
         
 _humann2_default_dbs = None
+@memoized
 def _get_humann2_dbs(opts_d):
     global _humann2_default_dbs
     if ("chocophlan" not in opts_d or "uniref" not in opts_d) \
