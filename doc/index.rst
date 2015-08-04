@@ -21,25 +21,49 @@ Installation Guide
 Manually
 ________
 
-Start with the latest version of python2_, virtualenv_, and
-setuptools_.
+Currently, the best way to install ``anadama_workflows`` and all of
+its dependencies is by hand. It's not too daunting right now and
+shouldn't take longer than 20 minutes.
 
-You'll also need a decent development environment. Refer to the
-documentation for your distribution, but mostly it's something like
-``apt-get install build-essential`` or ``sudo yum groupinstall
-'Development Tools'``. Make sure you have ``git`` and ``hg``, too.
+The process generally proceeds as follows:
+
+  * Install Python, virtualenv, and the anadama drivers.
+
+  * Install the prerequisites for any pipeline or type of workflows
+    you plan to use.
+
+  * Update the ``anadama_workflows`` settings file
+
+
+
+General Prerequisites
+---------------------
+
+Start with the latest version of python2_, virtualenv_, and
+setuptools_ (click the links to go to their respective download
+pages).
+
+You'll also need a decent development environment. To install a
+development environment, please refer to your distribution's
+documentation. Likely, it's something akin to running ``apt-get
+install build-essential`` or ``sudo yum groupinstall 'Development
+Tools'``. Make sure you have ``git`` and ``hg`` (aka mercurial)
+installed, too.
 
 Sadly, you'll also need a JVM. Download and install the Oracle JVM
 v1.7.
 
-Start off with a virtualenv::
+It's best to install the dependencies required by
+``anadama_workflows`` in a virtualenv_.
+
+Here's how we'll install a virtualenv::
 
   virtualenv ~/anadama_env
   cd ~/anadama_env
   source bin/activate
 
-Now we start filling out our ``src`` directory with anadama and
-anadama_workflows::
+Next, we'll install the python programs and libraries that orchestrate
+the workflows. That's just two commands::
 
   pip install -e 'git+https://bitbucket.org/biobakery/anadama.git@master#egg=anadama-0.0.1'
 
@@ -47,9 +71,12 @@ anadama_workflows::
   
   
 That's all we need to drive things. Next, we'll install the
-dependencies needed for AnADAMA's ``SixteenSPipeline`` and
-``WGSPipeline``.
+dependencies needed for AnADAMA's ``WGSPipeline`` and
+``SixteenSPipeline``.
 
+
+WGS Pipeline
+------------
 
 For these steps, let's define some bash functions to ease our
 installation tasks::
@@ -117,9 +144,9 @@ And now we do KNEAD_data::
 
 Next, we'll need Breadcrumbs. Breadcrumbs requires python packages
 (like numpy) that have conflicting versions with some other packages
-we will install later (qiime). We'll get around this problem by using
+you might install later (qiime). We'll get around this problem by using
 a script called ``docent``. We first install docent, then we install
-qiime::
+breadcrumbs::
 
   download_unpack https://bitbucket.org/biobakery/docent/get/HEAD.tgz
   pip install -e biobakery-docent-*/
@@ -137,7 +164,25 @@ qiime::
 That's all for the WGS Pipeline.
 
 
-Proceeding on to the installation dependencies ``SixteenSPipeline``.
+16S Pipeline
+------------
+
+For these steps, let's define some bash functions to ease our
+installation tasks::
+
+  function link() { ln -sv $(readlink -f "$1") ~/anadama_env/bin/; }
+
+  function download_unpack() { wget -O- "$1" | tar -xvzf - ; }
+
+
+Start in the ``src`` directory of your virtualenv::
+
+  cd src
+
+
+Some software that we'll install requires python packages that
+conflict with other 
+
 First up is ea-utils::
 
   # Go to https://code.google.com/p/ea-utils/
@@ -157,8 +202,17 @@ And Biom-format::
   pip install biom-format==1.3.1
 
 
-Now we install qiime. Again using docent to 'quarantine' dependencies::
+Next, we'll need Qiime. Qiime requires python packages (like numpy)
+that have conflicting versions with some other packages you might
+install (Breadrumbs). We'll get around this problem by using a script
+called ``docent``.We first install docent, then we install qiime. If
+you've already installed ``docent``, you can skip that step::
 
+  # The docent install step. skip if you've already installed docent
+  download_unpack https://bitbucket.org/biobakery/docent/get/HEAD.tgz
+  pip install -e biobakery-docent-*/
+  
+  # regardless of installing docent, run this step to install qiime
   download_unpack 'https://github.com/biocore/qiime/archive/1.8.0.tar.gz'
   cd ~/anadama_env
   docent -v \
@@ -211,8 +265,6 @@ Change the file locations to where you've installed them. Like so::
   class knead:
       reference_db = "/home/user/anadama_env/databases/bowtie2/humanGRCh38"
       trim_path = "/home/user/anadama_env/src/Trimmomatic-0.33/trimmomatic-0.33.jar"
-
-
 
 
 
