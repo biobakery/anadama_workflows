@@ -59,23 +59,22 @@ def humann(infiles_list, workdir):
         
 _humann2_default_dbs = None
 @memoized
-def _get_humann2_dbs(opts_d):
+def _get_humann2_dbs(chocophlan=None, uniref=None):
     global _humann2_default_dbs
-    if ("chocophlan" not in opts_d or "uniref" not in opts_d) \
-       and not _humann2_default_dbs:
+    if (not chocophlan or not uniref) and not _humann2_default_dbs:
         from re import findall
         from subprocess import check_output
         _humann2_default_dbs = findall(r'DEFAULT: (.+uniref|.+chocophlan)]',
                                        check_output(["humann2", "-h"]))
 
-    if "chocophlan" not in opts_d and "uniref" not in opts_d:
+    if not chocophlan and not uniref:
         return _humann2_default_dbs
-    elif "chocophlan" not in opts_d and 'uniref' in opts_d:
-        return _humann2_default_dbs[0], opts_d['uniref']
-    elif "chocophlan" in opts_d and 'uniref' not in opts_d:
-        return opts_d['chocophlan'], _humann2_default_dbs[1]
-    else: # both uniref and chocophlan are in opts_d
-        return opts_d['chocophlan'], opts_d['uniref']
+    elif not chocophlan and bool(uniref) is True:
+        return _humann2_default_dbs[0], uniref
+    elif bool(chocophlan) is true and not uniref:
+        return chocophlan, _humann2_default_dbs[1]
+    else: # both uniref and chocophlan exist
+        return chocophlan, uniref
 
 
 @requires(binaries=['humann2'],
@@ -132,7 +131,8 @@ def humann2(seqfile_in, output_dir, scratch=None, **opts):
     if scratch:
         old_out = default_opts['output']
         default_opts.pop('output', None)
-        dbs = _get_humann2_dbs(default_opts)
+        dbs = _get_humann2_dbs(default_opts.get("chocophlan", None),
+                               default_opts.get("uniref", None))
         default_opts.pop('chocophlan', None), default_opts.pop('uniref', None)
         cmd = "humann2 " + dict_to_cmd_opts(default_opts, longsep=" ")
         actions = [
