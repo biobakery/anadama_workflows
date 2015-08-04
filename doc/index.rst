@@ -11,9 +11,12 @@ Contents:
 .. toctree::
    :maxdepth: 2
    
+   biologists
    workflows
    pipelines
 
+
+.. _installation-guide:
 
 Installation Guide
 ==================
