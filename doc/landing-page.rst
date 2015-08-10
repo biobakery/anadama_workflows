@@ -25,12 +25,23 @@ Installation
 Please refer to the installation guide on the docs_ site.
 
 
+Usage
+=====
+
+The docs site has a guide_ to using ``anadama_workflows``.
+There are also a few demos_ to get you started.
+
+.. _guide: http://huttenhower.sph.harvard.edu/docs/anadama_workflows/biologists.html#how-to-use-pipelines
+
+.. _demos: http://huttenhower.sph.harvard.edu/docs/anadama_workflows/biologists.html#demos
+
+
 Documentation
 =============
 
 Head on over to the docs_ site.
 
-.. _docs: http://rschwager-hsph.bitbucket.org/documentation/anadama-workflows/index.html
+.. _docs: http://huttenhower.sph.harvard.edu/docs/anadama-workflows/index.html
 
 
 How to get help

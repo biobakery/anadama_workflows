@@ -22,7 +22,7 @@ sections below detail how to use workflows and pipelines.
 
 
 What's the difference between a workflow and a pipeline?
-========================================================
+________________________________________________________
 
 A workflow is AnADAMA's smallest reproduceable unit of work. Workflows
 make tasks, AnADAMA executes the tasks, moving the overall project or
@@ -48,8 +48,16 @@ Please refer to :ref:`installation-guide`.
 How to use Pipelines
 ====================
 
-AnADAMA provides three interfaces to pipelines: the directory skeleton
-interface, the command-line interface, and the python interface.
+AnADAMA provides three interfaces to pipelines:
+
+ * The directory skeleton (easiest for new users and those afraid of
+   long shell commands).
+
+ * The command line interface (more advanced, but only one command
+   needed).
+
+ * The python interface (advanced, intended for python-istas)
+
 
 Pipeline Directory Skeleton
 ___________________________
@@ -72,70 +80,41 @@ line and execute everything with one (possibly big) command. Use the
 ``anadama pipeline`` command.
 
 For more information on how to use the ``pipeline`` command, see
-`AnADAMA's documentation <http://rschwager-hsph.bitbucket.org/documentation/anadama/your_own_pipeline.html#using-pipelines-via-the-command-line-interface>`_.
+`AnADAMA's documentation <http://huttenhower.sph.harvard.edu/docs/anadama/your_own_pipeline.html#using-pipelines-via-the-command-line-interface>`_.
 
 
 Pipeline Python Interface
 _________________________
 
-Pipelines are importable python classes.
-Here's an example of using a pipeline in a dodo.py file:
-
-.. code:: python
-
-  import os
-  from anadama_workflows import pipelines
-
-  all_files = os.listdir('./raw_data_files/')
-  
-  def task_16S_analysis():
-      """Use the 16S pipeline from anadama_workflows to get some OTU
-      tables from some samples"""
-
-      # Instantiate the pipeline
-      my_pipeline = pipelines.SixteenSPipeline(
-          raw_seq_files = all_files,
-          sample_metadata = "./map.txt",
-      )
-      # have it build up the tasks necessary to finish processing
-      my_pipeline.configure()
-
-      # give the tasks over to DoIt
-      yield my_pipeline.task_dicts
+Pipelines are importable python classes. If writing python is your
+thing, see :doc:`python-interface`.
 
 
+Further pipeline documentation
+______________________________
+
+The pipelines are composed of many workflows, each having many
+options.  The docs are your guide to understanding those
+options. Below are the currently documented pipelines:
+
+* :doc:`pipelines.sixteen`
+* :doc:`pipelines.wgs`
+* :doc:`pipelines.vis`
 
 
 How to use workflows
 ====================
 
 Unlike pipelines, there's only one interface to individual
-workflows: python. Start by creating your own dodo.py file with a text
-editor of your choice (text editors are programs like nano or Sublime
-text, NOT word processors like Microsoft Word, Google Docs or
-Openoffice) and typing the following:
+workflows: python. If the default pipelines don't give you the
+flexibility or features you want, see :doc:`python-interface`.
 
-.. code:: python
 
-	  import anadama_workflows as workflows
-	  fastq_files = glob.glob("*.fastq")
+Demos
+=====
 
-	  def task_metagenome_profile():
-	      """perform metagenomic profiling on all fastq files"""
+*  16S Pipeline :ref:`sixteendemo`
 
-	      alignment_files = list()
-	      for fastq_file in fastq_files:
-	          yield workflows.metaphlan2([fastq_file])
-		  alignment_file = fastq_file+".sam"
-		  yield workflows.bowtie2_align([fastq_file],
-		                                alignment_file)
-	          alignment_files.append(alignment_file)
-              yield workflows.humann([alignment_files], workdir='./humann')
+*  WGS Pipeline :ref:`wgsdemo`
 
-Then save the file and run by executing ``anadama run -f dodo.py``.
-This is all python code; if you're new to Python, consider reading the
-Python tutorial_ or the `code academy tutorial`_.
-
-.. _tutorial: https://docs.python.org/2/tutorial/index.html
-
-.. _`code academy tutorial`: https://www.codecademy.com/en/tracks/python
+*  Python interface :doc:`python-interface`
