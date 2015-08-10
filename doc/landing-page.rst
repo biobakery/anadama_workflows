@@ -41,7 +41,7 @@ Documentation
 
 Head on over to the docs_ site.
 
-.. _docs: http://huttenhower.sph.harvard.edu/docs/anadama-workflows/index.html
+.. _docs: http://huttenhower.sph.harvard.edu/docs/anadama_workflows/index.html
 
 
 How to get help
