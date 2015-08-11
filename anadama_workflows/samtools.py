@@ -1,6 +1,7 @@
-from anadama.util import dict_to_cmd_opts
-from anadama.decorators import requires
+import os
 
+from anadama.util import dict_to_cmd_opts, first
+from anadama.decorators import requires
 
 @requires(binaries=["samtools"],
           version_methods=["samtools 2>&1 | awk '/Version/{print $2;}'"])
@@ -69,3 +70,33 @@ def to_paired_fastq(input_bam, output_prefix, **kwargs):
              "file_dep": [input_bam],
              "targets": [output_r1, output_r2, output_se],
              "actions": [cmd] }
+
+
+def to_bam(input_sam, output_bam, threads=1, **kwargs):
+
+    kwargs['@'] = kwargs.get("@", threads)
+    opts = dict([
+        ("b", ""),
+        ("o", output_bam)
+    ]+list(kwargs.iteritems()))
+    
+    cmd = ("samtools view "
+           +" "+dict_to_cmd_opts(opts)
+           +" "+input_sam)
+
+    def _perfhint(task):
+        threads = int(opts.get("@", 1))
+        mem = 400 # MB
+        size_mb = os.stat(first(task.file_dep)).st_size / 1024. / 1024.
+        rate = 1800. # MB/clock min
+        time = 20 + (size_mb/rate)
+        return ("{n} Estimated mem={mem:.0f} "
+                "time={time:.0f} threads={threads:.0f}").format(
+                    n=task.name, mem=mem, time=time, threads=threads)
+
+    return { "name": "samtools.to_bam: "+output_bam,
+             "file_dep": [input_sam],
+             "targets": [output_bam],
+             "actions": [cmd],
+             "title": _perfhint }
+
