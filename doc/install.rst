@@ -122,8 +122,8 @@ And now we do KNEAD_data::
   link jre1.7.0_80/bin/java
 
   # And we'll also need a human reference database
-  mkdir -pv ~/anadama_dev/databases/bowtie2
-  cd !$
+  mkdir -pv ~/anadama_env/databases/bowtie2
+  cd ~/anadama_env/databases/bowtie2
   download_unpack 'ftp://ftp.ncbi.nlm.nih.gov/genbank/genomes/Eukaryotes/vertebrates_mammals/Homo_sapiens/GRCh38/seqs_for_alignment_pipelines/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.bowtie_index.tar.gz'
   for file in *; do mv -iv $file $( echo "$file" | sed -e 's|GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.bowtie_index|humanGRCh38|g' ); done
 
@@ -134,12 +134,13 @@ you might install later (qiime). We'll get around this problem by using
 a script called ``docent``. We first install docent, then we install
 breadcrumbs::
 
+  cd ~/anadama_env/
   download_unpack https://bitbucket.org/biobakery/docent/get/HEAD.tgz
   pip install -e biobakery-docent-*/
   
   download_unpack https://bitbucket.org/biobakery/breadcrumbs/get/ed59079c2e5e.tgz
   docent -e  ~/anadama_env/src/biobakery-breadcrumbs-ed59079c2e5e/env -v \
-      -i '-e "~/anadama_dev/src/biobakery-breadcrumbs-ed59079c2e5e"' \
+      -i '-e "~/anadama_env/src/biobakery-breadcrumbs-ed59079c2e5e"' \
       -o bin/scriptConvertBetweenBIOMAndPCL.py \
       -o bin/scriptEnvToTable.py \
       -o bin/scriptManipulateTable.py \
@@ -207,6 +208,7 @@ you've already installed ``docent``, you can skip that step::
       -e ~/anadama_env/src/qiime-1.8.0/env
 
   # Need to download some databases
+  mkdir -pv ~/anadama_env/databases/
   cd ~/anadama_env/databases/
   download_unpack 'ftp://greengenes.microbio.me/greengenes_release/gg_13_5/gg_13_5_otus.tar.gz'
 
