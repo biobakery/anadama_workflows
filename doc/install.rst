@@ -134,13 +134,14 @@ you might install later (qiime). We'll get around this problem by using
 a script called ``docent``. We first install docent, then we install
 breadcrumbs::
 
-  cd ~/anadama_env/
+  cd ~/anadama_env/src/
   download_unpack https://bitbucket.org/biobakery/docent/get/HEAD.tgz
   pip install -e biobakery-docent-*/
   
   download_unpack https://bitbucket.org/biobakery/breadcrumbs/get/ed59079c2e5e.tgz
+  cd ~/anadama_env
   docent -e  ~/anadama_env/src/biobakery-breadcrumbs-ed59079c2e5e/env -v \
-      -i '-e "~/anadama_env/src/biobakery-breadcrumbs-ed59079c2e5e"' \
+      -i "-e ~/anadama_env/src/biobakery-breadcrumbs-ed59079c2e5e" \
       -o bin/scriptConvertBetweenBIOMAndPCL.py \
       -o bin/scriptEnvToTable.py \
       -o bin/scriptManipulateTable.py \
@@ -196,6 +197,7 @@ called ``docent``.We first install docent, then we install qiime. If
 you've already installed ``docent``, you can skip that step::
 
   # The docent install step. skip if you've already installed docent
+  cd ~/anadama_env/src
   download_unpack https://bitbucket.org/biobakery/docent/get/HEAD.tgz
   pip install -e biobakery-docent-*/
   
@@ -218,9 +220,9 @@ Finally, install picrust::
   cd ~/anadama_env/src
   download_unpack 'https://github.com/picrust/picrust/releases/download/1.0.0/picrust-1.0.0.tar.gz'
   cd ../
-  docent -v -a '-p /usr/local/bin/python '\
+  docent -v \
       -i "numpy==1.5.1" -i "biom-format==1.3.1" -i "cogent==1.5.3" \
-      -i '-e "~/anadama_env/src/picrust-1.0.0"'  \
+      -i "-e ~/anadama_env/src/picrust-1.0.0"  \
       -j ~/anadama_env/src/biobakery-docent*/specs/picrust.json \
       -e ~/anadama_env/src/picrust-1.0.0/env
 
@@ -274,3 +276,25 @@ Matplotlib can't find /usr/include/freetype2/ft2build.h, but it can
 find /usr/include/ft2build.h, so link it up::
 
   sudo ln -sv /usr/include/freetype2/ft2build.h /usr/include/ft2build.h
+
+
+Tricks for Ubuntu 14.04
+_______________________
+
+A few packages you must install::
+
+  sudo apt-get update
+  sudo apt-get upgrade
+  sudo apt-get install build-essential \
+      git mercurial python-virtualenv \
+      zlib1g-dev unzip zip libbz2-dev \
+      libglpk-dev libglpk36 gfortran \
+      swig \
+      libfreetype6-dev libfreetype6 libpng12-0
+
+And, just like in debian 8, libfreetype2's headers can't be
+found. Symlink them like so::
+
+  sudo ln -sv /usr/include/freetype2/ft2build.h /usr/include/ft2build.h
+
+
