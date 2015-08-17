@@ -19,9 +19,6 @@ class Usearch16SPipeline(SixteenSPipeline):
             'infer': True
         },
         'write_map':            { },
-        'truncate':             {
-            "trunclen": "215"
-        },
         'fastq_split':          { },
         'demultiplex':          {
             'qiime_opts': { 
@@ -60,14 +57,6 @@ class Usearch16SPipeline(SixteenSPipeline):
                 yield task
 
         for fasta_fname in self.demuxed_fasta_files:
-            # truncate to a uniform length first
-            base = util.new_file(os.path.basename(fasta_fname),
-                                 basedir=self.products_dir)
-            truncated = util.addtag(base, "truncated")
-            yield truncate( fasta_fname, fasta_out=truncated,
-                            **self.options.get("truncate", {}) )
-            fasta_fname = truncated
-
             otu_table = util.rmext(fasta_fname)+"_tax.biom"
             otu_table = join(self.products_dir, os.path.basename(otu_table))
             yield pick_otus_closed_ref(

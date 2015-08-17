@@ -1,5 +1,8 @@
 import os
 from os.path import join
+from itertools import imap
+from collections import Counter
+from operator import itemgetter
 
 from anadama import strategies
 from anadama.action import CmdAction
@@ -10,6 +13,7 @@ from anadama.util import addtag
 from . import settings
 from .sixteen import assign_taxonomy
 
+snd = itemgetter(1)
 statsum = lambda fs: sum(os.stat(f).st_size for f in fs)
 
 def usearch_dict_flags(opts_dict):
@@ -27,6 +31,60 @@ def usearch_rusage(input_seqs, time_multiplier=1, threads=1):
             threads=threads
         )
     return _titlefunc
+
+
+from itertools import imap
+from collections import Counter
+from operator import itemgetter
+
+snd = itemgetter(1)
+
+
+class util:
+    @staticmethod
+    def fasta_sequences(seqs_f):
+        id = None
+        lines = iter(seqs_f)
+        line = next(lines).strip()
+        while True:
+            if line.startswith(">"):
+                id, rest = line.split(None, 1)
+                id = id.replace(">", "")
+                line = next(lines).strip()
+            else:
+                seq = str()
+                while not line.startswith(">"):
+                    seq += line
+                    line = next(lines).strip()
+                yield (id, seq)
+                id, seq = str(), str()
+
+
+    @staticmethod
+    def hist(fname):
+        with open(fname) as f:
+            seqs = util.fasta_sequences(f)
+            cnts = Counter( imap(len, imap(snd, seqs)) )
+        return sorted(cnts.iteritems(), reverse=True)
+
+
+    @staticmethod
+    def cumsum(it):
+        sm = 0
+        for item in it:
+            sm += item
+            yield sm
+
+
+    @staticmethod
+    def cutoff(fname, cutoff_ratio=.95):
+        h = util.hist(fname)
+        read_length_counts = map(snd, h)
+        read_depth = sum(read_length_counts)
+        for i, sm in enumerate(util.cumsum(read_length_counts)):
+            if float(sm)/read_depth > cutoff_ratio:
+                return h[i][0]
+
 
 
 @requires(binaries=['usearch7', 'sequence_pair'],
@@ -201,18 +259,30 @@ def truncate(fastx_in, fasta_out=None, fastq_out=None, **opts):
           version_methods=["usearch8 -version",
                            "pip freeze | fgrep anadama_workflows"])
 def pick_denovo_otus(fasta_in, otutab_out, remove_tempfiles=True,
-                     strand="plus", derep_opts={}, sort_opts={},
-                     cluster_opts={}, chimera_opts={}, map_opts={}):
+                     strand="plus", truncate_opts={}, derep_opts={},
+                     sort_opts={}, cluster_opts={}, chimera_opts={},
+                     map_opts={}):
 
     tmpfolder = otutab_out+"_usearch"
     mkdir_cmd = "test -d "+tmpfolder+" || mkdir "+tmpfolder
+
+    trunc_out = join(tmpfolder, "truncated.fa")
+    def _truncate_cmd():
+        trunclen = util.cutoff(fasta_in)
+        truncate_opts['trunclen'] = str(trunclen)
+        truncate_opts['fastaout'] = trunc_out
+        return CmdAction("usearch8 -fastx_truncate "+fasta_in+
+                         " "+usearch_dict_flags(truncate_opts),
+                         verbose=True
+        ).execute()
+
 
     default_derep_opts = dict([
         ("sizeout", ""),
     ]+list(derep_opts.items()))
     
     derep_out = join(tmpfolder, "derep.fa")
-    derep_cmd = ("usearch8 -derep_fulllength "+fasta_in+
+    derep_cmd = ("usearch8 -derep_fulllength "+trunc_out+
                  " -fastaout "+derep_out+
                  " "+usearch_dict_flags(default_derep_opts))
 
@@ -263,8 +333,8 @@ def pick_denovo_otus(fasta_in, otutab_out, remove_tempfiles=True,
     cleanup_cmd = "rm " + " ".join((derep_out, sort_out,
                                     cluster_otus_out, map_out))
 
-    actions = [ mkdir_cmd, derep_cmd, sort_cmd, cluster_cmd,
-                chimera_cmd, map_cmd, otu_cmd ]
+    actions = [ mkdir_cmd, _truncate_cmd, derep_cmd, sort_cmd,
+                cluster_cmd, chimera_cmd, map_cmd, otu_cmd ]
     if remove_tempfiles:
         actions.append(cleanup_cmd)
 
