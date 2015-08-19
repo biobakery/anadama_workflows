@@ -231,8 +231,6 @@ class SixteenSPipeline(Pipeline, DemultiplexMixin, SampleFilterMixin,
 
         self._unpack_metadata(default = _default_metadata)
 
-        self._unpack_metadata()
-
         if not products_dir:
             products_dir = settings.workflows.product_directory
         self.products_dir = os.path.abspath(products_dir)

@@ -99,6 +99,8 @@ class VisualizationPipeline(Pipeline, SampleMetadataMixin):
                           merged_otu_tables = merged_otu_tables,
                           pcl_files         = pcl_files)
 
+        self._unpack_metadata()
+
         if not products_dir:
             products_dir = settings.workflows.product_directory
         self.products_dir = os.path.abspath(products_dir)
