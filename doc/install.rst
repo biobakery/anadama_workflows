@@ -111,7 +111,7 @@ Now we do humann2::
 
 And now we do KNEAD_data::
 
-  download_unpack https://bitbucket.org/biobakery/kneaddata/get/v0.3.tar.gz
+  download_unpack https://bitbucket.org/biobakery/kneaddata/get/9f2bc13440e5.tar.gz
   pip install -e biobakery-kneaddata-*/
 
   wget -O trimmomatic.zip 'http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.33.zip'
