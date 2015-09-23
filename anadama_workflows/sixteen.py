@@ -2,6 +2,7 @@ from __future__ import absolute_import
 """16S workflows"""
 
 import os
+import glob
 import operator
 import itertools
 from os.path import join
@@ -23,6 +24,14 @@ from anadama.util import (
 from . import ( 
     settings
 )
+
+def _reduce_to_glob(fnames):
+    pref = os.path.commonprefix(fnames)
+    suf = "".join(reversed(
+        os.path.commonprefix(["".join(reversed(f)) for f in fnames])
+    ))
+    return pref+"*"+suf
+
 
 def write_map(sample_group, sample_dir):
     """Workflow to write a new map.txt file from a list of samples.  The
@@ -386,9 +395,14 @@ def merge_otu_tables(files_list, name):
     
     def merge_filter(deps,targets):
         files = [file for file in deps
-                 if os.path.exists(file) and os.stat(file).st_size > 0] 
-        cmd = "merge_otu_tables.py -i {filenames} -o {output}"
-        cmd = cmd.format( filenames = ",".join(files), 
+                 if os.path.exists(file) and os.stat(file).st_size > 0]
+        pat = _reduce_to_glob(files)
+        if list(sorted(glob.glob(pat))) == list(sorted(files)):
+            inputs = pat
+        else:
+            inputs = ",".join(files)
+        cmd = "merge_otu_tables.py -i '{filenames}' -o {output}"
+        cmd = cmd.format( filenames = inputs,
                           output    = name  )
         return CmdAction(cmd, verbose=True).execute()
 
