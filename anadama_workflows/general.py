@@ -199,16 +199,19 @@ def fastq_join(forward_fname, reverse_fname, output_file,
         renamed_output = output_file+"join"
 
     actions = [cmd]
+    unpaired_forward = renamed_output.replace("join", "un1")
     if not drop_unpaired and reorder_to:
-        unpaired_forward = renamed_output.replace("join", "un1")
         actions.append( "sequence_re-pair -f fastq -t fastq -b %s %s %s > %s"%(
             reorder_to, renamed_output, unpaired_forward, output_file) )
+    elif not drop_unpaired and not reorder_to:
+        actions.append("cat {} {} > {}".format(
+            unpaired_forward, renamed_output, output_file))
     else:
         actions.append("mv %s %s"%(renamed_output, output_file))
 
 
     return {
-        "name": "fastq_join: %s..."%(output_file),
+        "name": "fastq_join: "+output_file,
         "actions": actions,
         "file_dep": [forward_fname, reverse_fname],
         "targets": [output_file]
