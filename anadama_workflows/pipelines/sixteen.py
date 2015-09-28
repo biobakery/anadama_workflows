@@ -9,7 +9,7 @@ from anadama import util
 from anadama.pipelines import Pipeline
 
 from .. import settings
-from .. import general, sixteen, biom
+from .. import general, sixteen, biom, usearch
 
 from . import (
     SampleFilterMixin, 
@@ -134,6 +134,7 @@ class SixteenSPipeline(Pipeline, DemultiplexMixin, SampleFilterMixin,
       * :py:func:`anadama_workflows.general.fastq_join`
       * :py:func:`anadama_workflows.sixteen.write_map`
       * :py:func:`anadama_workflows.general.fastq_split`
+      * :py:func:`anadama_workflows.usearch.filter`
       * :py:func:`anadama_workflows.sixteen.demultiplex`
       * :py:func:`anadama_workflows.sixteen.pick_otus_closed_ref`
       * :py:func:`anadama_workflows.sixteen.picrust`
@@ -141,11 +142,12 @@ class SixteenSPipeline(Pipeline, DemultiplexMixin, SampleFilterMixin,
 
     name = "16S"
     products = {
-        "sample_metadata"     : list(),
-        "raw_seq_files"       : list(),
-        "barcode_seq_files"   : list(),
-        "demuxed_fasta_files" : list(),
-        "otu_tables"          : list()
+        "sample_metadata"         : list(),
+        "raw_seq_files"           : list(),
+        "barcode_seq_files"       : list(),
+        "raw_demuxed_fastq_files" : list(),
+        "demuxed_fasta_files"     : list(),
+        "otu_tables"              : list()
     }
 
     default_options = {
@@ -159,6 +161,12 @@ class SixteenSPipeline(Pipeline, DemultiplexMixin, SampleFilterMixin,
                 'M': '2'    
             }
         },
+        'fastq_filter':        {
+            'fastq_minlen':    200,
+            'fastq_truncqual': 25,
+            'do_mangle':       True,
+            'mangle_to':       None,
+        },
         'demultiplex_illumina': { },
         'pick_otus_closed_ref': { },
         'picrust':              { },
@@ -168,6 +176,7 @@ class SixteenSPipeline(Pipeline, DemultiplexMixin, SampleFilterMixin,
         'infer_pairs':          None,
         'write_map':            None,
         'fastq_split':          general.fastq_split,
+        'fastq_filter':         usearch.filter,
         'demultiplex':          sixteen.demultiplex,
         'demultiplex_illumina': sixteen.demultiplex_illumina,
         'pick_otus_closed_ref': sixteen.pick_otus_closed_ref,
@@ -178,6 +187,7 @@ class SixteenSPipeline(Pipeline, DemultiplexMixin, SampleFilterMixin,
                  sample_metadata=list(),
                  raw_seq_files=list(),
                  barcode_seq_files=list(),
+                 raw_demuxed_fastq_files=list(), # not QC'd
                  demuxed_fasta_files=list(), # assumed to be QC'd
                  otu_tables=list(),
                  products_dir=str(),
@@ -199,6 +209,17 @@ class SixteenSPipeline(Pipeline, DemultiplexMixin, SampleFilterMixin,
                                 of pairs, if you want to stitch paired-end
                                 reads. Supported sequence file formats are 
                                 whatever biopython recognizes.
+
+        :keyword barcode_seq_files: List of strings; File paths to
+        barcode fastq files. Typically, an Illumina sequencer will
+        give sequences and barcodes in separate files. This is where
+        those Illumina barcode files go.
+
+        :keyword raw_demuxed_fastq_files: List of strings; File paths
+        to already demuxed but unfiltered sequence files. Adjust the
+        fastq_filter options to change how these fastq files are
+        filtered.
+
         :keyword demuxed_fasta_files: List of strings; File paths to 
                                       demultiplexed fasta files. Assumed to be
                                       quality-checked and ready to be used in
@@ -210,15 +231,19 @@ class SixteenSPipeline(Pipeline, DemultiplexMixin, SampleFilterMixin,
                                be saved.
         :keyword workflow_options: Dictionary; **opts to be fed into the 
                                   respective workflow functions.
+
         """
 
         super(SixteenSPipeline, self).__init__(*args, **kwargs)
 
-        self.add_products(sample_metadata     = sample_metadata,
-                          raw_seq_files       = raw_seq_files,
-                          barcode_seq_files   = barcode_seq_files,
-                          demuxed_fasta_files = demuxed_fasta_files,
-                          otu_tables          = otu_tables)
+        self.add_products(
+            sample_metadata         = sample_metadata,
+            raw_seq_files           = raw_seq_files,
+            barcode_seq_files       = barcode_seq_files,
+            raw_demuxed_fastq_files = raw_demuxed_fastq_files,
+            demuxed_fasta_files     = demuxed_fasta_files,
+            otu_tables              = otu_tables
+        )
 
 
         maybe_seqs = (self.raw_seq_files, self.demuxed_fasta_files)
@@ -240,16 +265,20 @@ class SixteenSPipeline(Pipeline, DemultiplexMixin, SampleFilterMixin,
         
 
     def _handle_raw_seqs(self):
-        self.raw_seq_files, maybe_tasks = maybe_decompress(
-            self.raw_seq_files, self.products_dir) 
-        yield maybe_tasks
-        self.barcode_seq_files, maybe_tasks = maybe_decompress(
-            self.barcode_seq_files, self.products_dir)  
-        yield maybe_tasks
+        attrs = ("raw_seq_files", "barcode_seq_files",
+                 "raw_demuxed_fastq_files")
+        for attr in attrs:
+            seqs, maybe_tasks = maybe_decompress(getattr(self, attr),
+                                                 self.products_dir)
+            setattr(self, attr, seqs)
+            yield maybe_tasks
 
+        paired_demuxed, single_demuxed = list(), list()
         if self.options['infer_pairs'].get('infer'):
             paired, notpaired = infer_pairs(self.raw_seq_files)
             self.raw_seq_files = paired + notpaired
+            paired_demuxed, single_demuxed = infer_pairs(
+                self.raw_demuxed_fastq_files)
 
         packed = maybe_stitch(
             self.raw_seq_files,
@@ -257,8 +286,28 @@ class SixteenSPipeline(Pipeline, DemultiplexMixin, SampleFilterMixin,
             barcode_files=self.barcode_seq_files
         )
         self.raw_seq_files, self.barcode_seq_files, maybe_tasks = packed
-        for t in maybe_tasks:
+        yield maybe_tasks
+
+        if paired_demuxed:
+            singles, _, maybe_tasks = maybe_stitch(paired_demuxed,
+                                                   self.products_dir)
+            yield maybe_tasks
+            self.raw_demuxed_fastq_files = singles
+        self.raw_demuxed_fastq_files += single_demuxed
+
+        for t in self._process_raw_demuxed_fastq_files():
             yield t
+
+
+    def _process_raw_demuxed_fastq_files(self):
+        for fname in self.raw_demuxed_fastq_files:
+            filtered_fname = util.addtag(fname, "filtered")
+            opts = self.options.get('fastq_filter', {})
+            opts['mangle_to'] = self._filter_samples_for_file(
+                self.sample_metadata, fname)[0][0]
+            yield usearch.filter(fname, filtered_fname, **opts)
+            self.demuxed_fasta_files.append(filtered_fname)
+
 
     def _demultiplex(self):
         if self.barcode_seq_files:
@@ -275,9 +324,10 @@ class SixteenSPipeline(Pipeline, DemultiplexMixin, SampleFilterMixin,
 
 
     def _configure(self):
-        if self.raw_seq_files:
+        if self.raw_seq_files or self.raw_demuxed_fastq_files:
             for task in self._handle_raw_seqs():
                 yield task
+        if self.raw_seq_files:
             for task in self._demultiplex():
                 yield task
 
@@ -362,7 +412,7 @@ def maybe_stitch(maybe_pairs, products_dir,
             )
             barcodes.append(filtered_barcode)
             tasks.append(pairtask)
-        elif maybe_barcode and not drop_unpaired:
+        else:
             tasks.append(
                 general.fastq_join(forward, reverse, output,
                                    maybe_barcode,

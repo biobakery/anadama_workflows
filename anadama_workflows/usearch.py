@@ -8,7 +8,7 @@ from anadama import strategies
 from anadama.action import CmdAction
 from anadama.decorators import requires
 from anadama.strategies import if_exists_run
-from anadama.util import addtag
+from anadama.util import addtag, rmext
 
 from . import settings
 from .sixteen import assign_taxonomy
@@ -24,7 +24,7 @@ def usearch_dict_flags(opts_dict):
 def usearch_rusage(input_seqs, time_multiplier=1, threads=1):
     def _titlefunc(task):
         msg = task.name+(" Estimated mem={mem:.2f} "
-                         "time={time:.0f} threads={time:.0f}")
+                         "time={time:.0f} threads={threads:.0f}")
         return msg.format(
             mem=100 + (statsum(task.file_dep)/1024/1024.),
             time=10 + (statsum(input_seqs)*5e-7*time_multiplier),
@@ -182,26 +182,49 @@ def stitch(input_fastq_pair, output_fastq, verbose=True,
 
 @requires(binaries=['usearch7'],
           version_methods=["usearch7 -version"])
-def filter(input_fastq, output_fasta, verbose=True, **opts):
+def filter(input_fastq, output_fasta, verbose=True, do_mangle=False,
+           mangle_to=None, **opts):
     """Filter a fastq file, outputting sequences as fasta, using USEARCH
     version 7. The USEARCH binary should be named usearch7 in order
     for this workflow to operate.
 
     :param input_fastq: String; file name of a single fastq file to be filtered.
     :param output_fasta: String; name of resulting filtered fasta file
-    :keyword verbose: Boolean; if true, print commands at runtime as they 
-                      are executed. Defaults to true.
-    :keyword **opts: Any additional keyword arguments are passed to usearch7 
-                     as command line flags. By default, it passes 
-                     `fastq_minlen=200` and `fastq_truncqual=25` as 
-                     '-fastq_minlen 200' and '-fastq_truncqual 25', 
-                     respectively.
+
+    :keyword verbose: Boolean; if true, print commands at runtime as
+    they are executed. Defaults to true.
+
+    :keyword do_mangle: Boolean; if true, mangle the header for each
+    sequence to only include a string (defaults to the name of the
+    output file minus the file extension) and the number of the
+    sequence. Sequence headers will look something like myfastaseqs_1.
+
+    :keyword mangle_to: String; The base string to use when mangling
+    sequence headers. Defaults to the name of the output file minus
+    the file extension.
+
+    :keyword **opts: Any additional keyword arguments are passed to
+    usearch7 as command line flags. By default, it passes
+    `fastq_minlen=200` and `fastq_truncqual=25` as '-fastq_minlen 200'
+    and '-fastq_truncqual 25', respectively.
 
     External dependencies
-      - USEARCH v7 http://www.drive5.com/usearch
+      - USEARCH v7 or greater http://www.drive5.com/usearch
 
     """
     
+    def _maybe_mangle():
+        if not do_mangle:
+            return
+        if not os.path.exists(output_fasta) or os.stat(output_fasta).st_size <1:
+            return
+        m = rmext(output_fasta, all=True) if mangle_to is False else mangle_to
+        cmd = "sequence_convert -m {m} -f fasta -t fasta {o} > {o}.tmp".format(
+            m=m, o=output_fasta)
+        CmdAction(cmd, verbose=verbose).execute()
+        CmdAction("mv {o}.tmp {o}".format(o=output_fasta),
+                  verbose=verbose).execute()
+        
 
     cmd = ("usearch7"+
            " -fastq_filter "+input_fastq+
@@ -217,7 +240,9 @@ def filter(input_fastq, output_fasta, verbose=True, **opts):
 
     def run():
         if os.stat(input_fastq).st_size > 1:
-            return CmdAction(cmd, verbose=verbose).execute()
+            ret = CmdAction(cmd, verbose=verbose).execute()
+            if ret is None or not issubclass(type(ret), Exception):
+                _maybe_mangle()
         else:
             open(output_fasta, 'w').close()
         

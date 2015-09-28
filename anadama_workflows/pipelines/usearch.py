@@ -8,7 +8,9 @@ from .sixteen import SixteenSPipeline
 from .. import biom
 from .. import general
 from .. import sixteen
+from .. import usearch
 from ..usearch import pick_otus_closed_ref, truncate
+
 
 
 class Usearch16SPipeline(SixteenSPipeline):
@@ -20,6 +22,12 @@ class Usearch16SPipeline(SixteenSPipeline):
         },
         'write_map':            { },
         'fastq_split':          { },
+        'fastq_filter':         {
+            'fastq_minlen':     200,
+            'fastq_truncqual':  25,
+            'do_mangle':        True,
+            'mangle_to':        None,
+        },
         'demultiplex':          {
             'qiime_opts': { 
                 'M': '2'    
@@ -42,6 +50,7 @@ class Usearch16SPipeline(SixteenSPipeline):
         'write_map':   None,
         'truncate':  truncate,
         'fastq_split': general.fastq_split,
+        'fastq_filter': usearch.filter,
         'demultiplex': sixteen.demultiplex,
         'demultiplex_illumina': sixteen.demultiplex_illumina,
         'pick_otus_closed_ref': pick_otus_closed_ref,
@@ -50,9 +59,10 @@ class Usearch16SPipeline(SixteenSPipeline):
 
 
     def _configure(self):
-        if self.raw_seq_files:
+        if self.raw_seq_files or self.raw_demuxed_fastq_files:
             for task in self._handle_raw_seqs():
                 yield task
+        if self.raw_seq_files:
             for task in self._demultiplex():
                 yield task
 
