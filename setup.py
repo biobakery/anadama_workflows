@@ -28,5 +28,12 @@ setup(
             'sequence_re-pair = anadama_workflows.utility_scripts.re_pair:main',
             'uclust_otutable = anadama_workflows.utility_scripts.uclust_otutable:main'
         ],
+        'anadama.pipeline': [
+            '.SixteenS = anadama_workflows.pipelines.sixteen:SixteenSPipeline',
+            '.Usearch16S = anadama_workflows.pipelines.usearch:Usearch16SPipeline',
+            '.WGS = anadama_workflows.pipelines.wgs:WGSPipeline',
+            '.RNA = anadama_workflows.pipelines.rna:RNAPipeline',
+            '.Visualization = anadama_workflows.pipelines.vis:VisualizationPipeline',
+        ],
     }
 )
