@@ -48,7 +48,8 @@ class util:
         line = next(lines).strip()
         while True:
             if line.startswith(">"):
-                id, rest = line.split(None, 1)
+                split_line = line.split(None, 1)
+                id = split_line[0]
                 id = id.replace(">", "")
                 line = next(lines).strip()
             else:
