@@ -26,7 +26,10 @@ setup(
             'sequence_pair    = anadama_workflows.utility_scripts.pair:main',
             'bam_pe_split     = anadama_workflows.utility_scripts.bam_pe_split:main',
             'sequence_re-pair = anadama_workflows.utility_scripts.re_pair:main',
-            'uclust_otutable = anadama_workflows.utility_scripts.uclust_otutable:main'
+            'uclust_otutable = anadama_workflows.utility_scripts.uclust:parse_otu_table',
+            'uclust_closed_otus = anadama_workflows.utility_scripts.uclust:closed_cli',
+            'uclust_denovo_otus = anadama_workflows.utility_scripts.uclust:denovo_cli',
+
         ],
         'anadama.pipeline': [
             '.SixteenS = anadama_workflows.pipelines.sixteen:SixteenSPipeline',
