@@ -106,7 +106,7 @@ class ExecutionPlan(object):
         return (float(step.idx)/len(self.steps))*100
 
     def _msg(self, step, msg):
-        msg =  "[step #{i:03d} - {pct:.2f}% ] {msg} -- {note}.".format(
+        msg =  "[step #{i:02d} - {pct:.2f}% ] {msg} -- {note}.".format(
             i=step.idx+1, pct=self._pct(step), msg=msg, note=step.note
         )
         if self._report_cmd:
@@ -133,7 +133,11 @@ class ExecutionPlan(object):
         
     def _runsh(self, step):
         try:
-            sh(step.cmd, stdout=self.stdout, stderr=self.stderr)
+            if self.quiet:
+                with open(os.devnull, 'w') as null_f:
+                    sh(step.cmd, stdout=null_f, stderr=null_f)
+            else:
+                sh(step.cmd, stdout=self.stdout, stderr=self.stderr)
         except ShellException as e:
             self._quit(step._replace(note=e.message), override=True)
             return False
@@ -359,7 +363,8 @@ global_opts = [
                          default=None, help="OTU Table output (tsv format)."),
     optparse.make_option("-d", "--tmp_dir", default=None, dest="tmp_folder",
                          help="Possibly useful output files are stored here"),
-    optparse.make_option("--remove_tempfiles", default=True,
+    optparse.make_option("--keep_tempfiles", default=True,
+                         dest="remove_tempfiles",
                          action="store_false", help="Removes the tmp_dir"),
     optparse.make_option("--resume", default=False, action="store_true",
                          help="Resume from intermediate files"),
@@ -499,6 +504,7 @@ def closed_cli():
     else:
         plan = ExecutionPlan(resume=opts.resume, quiet=opts.quiet,
                              report_cmd=opts.print_cmd)
+
     plan = pick_otus_closed_ref(plan, opts.input, opts.output,
                                 opts.taxonomy, opts.reference,
                                 opts.chimera_standard,
