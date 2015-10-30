@@ -110,7 +110,7 @@ class ExecutionPlan(object):
             i=step.idx+1, pct=self._pct(step), msg=msg, note=step.note
         )
         if self._report_cmd:
-            msg += " "+step.cmd
+            msg += " "+step.cmd if type(step.cmd) is str else str(step.cmd)
         self._report(msg+"\n")
         return msg
 
@@ -323,13 +323,12 @@ def pick_otus_closed_ref(execution_plan, in_fasta, out_tsv,
                 os.mkdir(tmp_folder)
     else:
         denovo_otutab = in_fasta+".otus.txt"
-        usearchfolder = denovo_otutab+"_usearch"
-        nonchimera = join(usearchfolder, "nonchimeric.fa")
+        nonchimera = join(tmp_folder, "nonchimeric.fa")
         plan = pick_denovo_otus(execution_plan, in_fasta,
                                 denovo_otutab, chimera_std,
-                                tmp_folder=usearchfolder,
+                                tmp_folder=tmp_folder,
                                 remove_tempfiles=False, **denovo_opts)
-        tmpfolder = usearchfolder
+        tmpfolder = tmp_folder
 
     default_u_opts = dict([
         ("strand", "both"),
