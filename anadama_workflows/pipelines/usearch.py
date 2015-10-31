@@ -71,7 +71,7 @@ class Usearch32_16SPipeline(Usearch16SPipeline):
     """USEARCH32bit-based 16S pipeline"""
 
     def _configure(self):
-        self._handle_raw_seqs_and_demultiplex()
+        yield self._handle_raw_seqs_and_demultiplex()
 
         for fasta_fname in self.demuxed_fasta_files:
             otu_table = util.rmext(fasta_fname)+"_tax.biom"
@@ -93,7 +93,7 @@ class Usearch64_16SPipeline(Usearch16SPipeline):
     """USEARCH64bit-based 16S pipeline"""
 
     def _configure(self):
-        self._handle_raw_seqs_and_demultiplex()
+        yield self._handle_raw_seqs_and_demultiplex()
 
         # merge all of the demultiplexed files into a single file
         merged_fasta = util.new_file("all_samples.fa", basedir=self.products_dir)
