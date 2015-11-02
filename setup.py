@@ -33,7 +33,8 @@ setup(
         ],
         'anadama.pipeline': [
             '.SixteenS = anadama_workflows.pipelines.sixteen:SixteenSPipeline',
-            '.Usearch16S = anadama_workflows.pipelines.usearch:Usearch16SPipeline',
+            '.Usearch32_16S = anadama_workflows.pipelines.usearch:Usearch32_16SPipeline',
+            '.Usearch64_16S = anadama_workflows.pipelines.usearch:Usearch64_16SPipeline',
             '.WGS = anadama_workflows.pipelines.wgs:WGSPipeline',
             '.RNA = anadama_workflows.pipelines.rna:RNAPipeline',
             '.Visualization = anadama_workflows.pipelines.vis:VisualizationPipeline',
