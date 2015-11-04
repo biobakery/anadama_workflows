@@ -288,6 +288,7 @@ class SixteenSPipeline(Pipeline, DemultiplexMixin, SampleFilterMixin,
         self.raw_seq_files, self.barcode_seq_files, maybe_tasks = packed
         yield maybe_tasks
 
+        self.raw_demuxed_fastq_files = []
         if paired_demuxed:
             singles, _, maybe_tasks = maybe_stitch(paired_demuxed,
                                                    self.products_dir)
