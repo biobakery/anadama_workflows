@@ -158,7 +158,7 @@ def humann2(seqfile_in, output_dir, scratch=None, **opts):
         est_reads = insize/100/10e5
         return "{n} Estimated mem={mem:.0f} time={time:.0f}, threads={threads:.0f}".format(
             n=task.name,
-            mem=(5 + (3.5*log(est_reads)))*1024,
+            mem=(750 + (3.5*log(est_reads))),
             time=(3.5 + ((2*est_reads)/threads))*60,
             threads=threads)
 
@@ -311,7 +311,7 @@ def knead_data(infiles, output_basestr, scratch=None, **opts):
                      for f in glob(pat+"*"))
         return "{n} Estimated mem={mem:.0f} time={time:.0f}, threads={threads}".format(
             n=task.name,
-            mem=dbsize/1024/1024,
+            mem=dbsize/1024/1024 + (1500),
             time=60+(insize/9e8/(threads)),
             threads=threads)
 
