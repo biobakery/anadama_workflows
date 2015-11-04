@@ -155,7 +155,8 @@ def humann2(seqfile_in, output_dir, scratch=None, **opts):
     def _perfhint(task):
         threads = int(default_opts.get('threads', 1))
         insize = os.stat(seqfile_in).st_size
-        est_reads = insize/100/10e5
+        # estimated number of million of reads for fastq input file
+        est_reads = insize/4/10e5
         return "{n} Estimated mem={mem:.0f} time={time:.0f}, threads={threads:.0f}".format(
             n=task.name,
             mem=(750 + (3.5*log(est_reads))),
@@ -249,9 +250,8 @@ def metaphlan2(files_list, scratch=None, **opts):
                 title    = _perfhint,)
 
 
-
-@requires(binaries=['knead_data.py', 'bowtie2'],           
-          version_methods=["pip freeze | grep knead_datalib",
+@requires(binaries=['kneaddata', 'bowtie2'],           
+          version_methods=["kneaddata --version",
                            "bowtie2 --version  |head"])
 def knead_data(infiles, output_basestr, scratch=None, **opts):
     """Workflow to sanitize host data and otherwise quality filter
@@ -260,7 +260,7 @@ def knead_data(infiles, output_basestr, scratch=None, **opts):
     database are discarded.
 
     Additional keywords are interpreted as command line options to be
-    passed to the wrapped knead_data.py script.  No - or -- flags are
+    passed to the wrapped kneaddata executable.  No - or -- flags are
     necessary; the correct - or --t flags are inferred based on the
     length of the option.  For boolean options, use the key/value
     pattern of { "my-option": "" }.
@@ -274,7 +274,7 @@ def knead_data(infiles, output_basestr, scratch=None, **opts):
 
 
     External dependencies:
-      - `knead_data.py <https://bitbucket.org/biobakery/kneaddata>`_
+      - `kneaddata <https://bitbucket.org/biobakery/kneaddata>`_
       - `bowtie2 <http://bowtie-bio.sourceforge.net/index.shtml>`_
 
     Resource utilization:
@@ -285,7 +285,7 @@ def knead_data(infiles, output_basestr, scratch=None, **opts):
     path, base = os.path.split(output_basestr)
     default_opts = {
         "output-prefix": base,
-        "output-dir": output_basestr+"_knead",
+        "output": output_basestr+"_knead",
         "reference-db": settings.workflows.knead.reference_db,
         "strategy": "memory",
         "logging": "WARNING"
@@ -294,7 +294,7 @@ def knead_data(infiles, output_basestr, scratch=None, **opts):
     
     db_bases = map(os.path.basename, default_opts['reference-db'])
     def _targets(nums=[None]):
-        outdir = default_opts['output-dir']
+        outdir = default_opts['output']
         prefix = default_opts['output-prefix']
         yield os.path.join(outdir, prefix+".fastq")
         for num in nums:
@@ -322,11 +322,11 @@ def knead_data(infiles, output_basestr, scratch=None, **opts):
 
     if len(infiles_list) > 1:
         one, two = infiles_list
-        default_opts['1'] = one
-        default_opts['2'] = two
+        default_opts['input'] = one
+        default_opts['input2'] = two
         targets = list(_targets(nums=[1,2]))
     else:
-        default_opts['1'] = infiles_list[0]
+        default_opts['input'] = infiles_list[0]
         targets = list(_targets())
 
     if scratch:
@@ -336,7 +336,7 @@ def knead_data(infiles, output_basestr, scratch=None, **opts):
             for db in db_bases
         ])
         refs = default_opts.pop("reference-db", None)
-        knead = "knead_data.py " + dict_to_cmd_opts(default_opts)
+        knead = "kneaddata " + dict_to_cmd_opts(default_opts)
         if refs:
             default_opts['reference-db'] = refs
         cmd = """ tdir=$(mktemp -d -p {sdir});
@@ -348,10 +348,10 @@ def knead_data(infiles, output_basestr, scratch=None, **opts):
         """.format(sdir=scratch, db_patterns=db_patterns,
                   knead=knead, db_printf_cmds=db_printf_cmds)
     else:
-        cmd = "knead_data.py " + dict_to_cmd_opts(default_opts)
+        cmd = "kneaddata " + dict_to_cmd_opts(default_opts)
 
     return {
-        "name": "knead_data:"+output_basestr,
+        "name": "kneaddata:"+output_basestr,
         "targets": targets,
         "file_dep": infiles_list,
         "actions": [cmd],

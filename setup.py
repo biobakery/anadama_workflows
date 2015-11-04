@@ -10,7 +10,8 @@ setup(
         'biopython>=1.63',
         'pysam==0.7.8',
         # anadama should also install doit
-        'anadama'
+        'anadama',
+        'nose>=1.0'
     ],
     dependency_links=[
         'git+https://bitbucket.org/biobakery/anadama.git@master#egg=anadama-0.0.1', 

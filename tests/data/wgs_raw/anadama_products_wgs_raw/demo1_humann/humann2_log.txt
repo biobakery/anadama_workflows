@@ -1,0 +1,88 @@
+11/04/2015 09:57:41 AM - humann2.humann2 - INFO: Running humann2 v0.5.0
+11/04/2015 09:57:41 AM - humann2.humann2 - INFO: Output files will be written to: /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann
+11/04/2015 09:57:41 AM - humann2.humann2 - INFO: Writing temp files to directory: /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_humann2_temp_xvu0i2
+11/04/2015 09:57:41 AM - humann2.utilities - INFO: File ( /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_knead/demo1.fastq ) is of format:  fastq
+11/04/2015 09:57:41 AM - humann2.utilities - INFO: Using bowtie2 version 2.2
+11/04/2015 09:57:41 AM - humann2.config - INFO: 
+Run config settings: 
+
+DATABASE SETTINGS
+nucleotide database folder = /home/ljmciver/.local/lib/python2.7/site-packages/humann2-0.5.0-py2.7.egg/humann2/data/chocophlan_DEMO
+protein database folder = /home/ljmciver/.local/lib/python2.7/site-packages/humann2-0.5.0-py2.7.egg/humann2/data/uniref_DEMO
+pathways database file 1 = /home/ljmciver/.local/lib/python2.7/site-packages/humann2-0.5.0-py2.7.egg/humann2/data/pathways/metacyc_reactions_level4ec_only.uniref.gz
+pathways database file 2 = /home/ljmciver/.local/lib/python2.7/site-packages/humann2-0.5.0-py2.7.egg/humann2/data/pathways/metacyc_pathways_structured_filtered
+
+RUN MODES
+resume = False
+verbose = False
+bypass prescreen = False
+bypass nucleotide index = False
+bypass nucleotide search = False
+bypass translated search = True
+translated search = diamond
+pick frames = off
+threads = 1
+
+ALIGNMENT SETTINGS
+evalue threshold = 1.0
+prescreen threshold = 0.01
+identity threshold = 40.0
+
+PATHWAYS SETTINGS
+minpath = on
+xipe = off
+
+INPUT AND OUTPUT FORMATS
+input file format = fastq
+output file format = tsv
+output max decimals = 10
+remove stratified output = False
+log level = DEBUG
+
+11/04/2015 09:57:46 AM - humann2.humann2 - INFO: Load pathways database part 1: /home/ljmciver/.local/lib/python2.7/site-packages/humann2-0.5.0-py2.7.egg/humann2/data/pathways/metacyc_reactions_level4ec_only.uniref.gz
+11/04/2015 09:57:47 AM - humann2.humann2 - INFO: Load pathways database part 2: /home/ljmciver/.local/lib/python2.7/site-packages/humann2-0.5.0-py2.7.egg/humann2/data/pathways/metacyc_pathways_structured_filtered
+11/04/2015 09:57:47 AM - humann2.search.prescreen - INFO: Running metaphlan2.py ........
+11/04/2015 09:57:47 AM - humann2.utilities - INFO: Execute command: /work/code/third_party_software/metaphlan2/metaphlan2/metaphlan2.py /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_knead/demo1.fastq -t rel_ab --mpa_pkl /work/code/third_party_software/metaphlan2/metaphlan2/db_v20/mpa_v20_m200.pkl --bowtie2db /work/code/third_party_software/metaphlan2/metaphlan2/db_v20/mpa_v20_m200 -o /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_humann2_temp_xvu0i2/demo1_metaphlan_bugs_list.tsv --input_type multifastq --bowtie2out /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_humann2_temp_xvu0i2/demo1_metaphlan_bowtie2.txt
+11/04/2015 09:58:41 AM - humann2.humann2 - INFO: TIMESTAMP: Completed 	prescreen 	:	 54	 seconds
+11/04/2015 09:58:41 AM - humann2.search.prescreen - INFO: Found g__Bacteroides.s__Bacteroides_stercoris : 65.22% of mapped reads
+11/04/2015 09:58:41 AM - humann2.search.prescreen - INFO: Found g__Bacteroides.s__Bacteroides_thetaiotaomicron : 34.78% of mapped reads
+11/04/2015 09:58:41 AM - humann2.search.prescreen - INFO: Total species selected from prescreen: 2
+11/04/2015 09:58:41 AM - humann2.search.prescreen - INFO: Creating custom ChocoPhlAn database ........
+11/04/2015 09:58:41 AM - humann2.utilities - INFO: Execute command: /usr/bin/gunzip -c /home/ljmciver/.local/lib/python2.7/site-packages/humann2-0.5.0-py2.7.egg/humann2/data/chocophlan_DEMO/g__Bacteroides.s__Bacteroides_stercoris.centroids.v0.1.1.ffn.gz /home/ljmciver/.local/lib/python2.7/site-packages/humann2-0.5.0-py2.7.egg/humann2/data/chocophlan_DEMO/g__Bacteroides.s__Bacteroides_thetaiotaomicron.centroids.v0.1.1.ffn.gz
+11/04/2015 09:58:42 AM - humann2.humann2 - INFO: TIMESTAMP: Completed 	custom database creation 	:	 0	 seconds
+11/04/2015 09:58:42 AM - humann2.search.nucleotide - INFO: Running bowtie2-build ........
+11/04/2015 09:58:42 AM - humann2.utilities - INFO: Execute command: /home/ljmciver/.local/bin/bowtie2-build -f /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_humann2_temp_xvu0i2/demo1_custom_chocophlan_database.ffn /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_humann2_temp_xvu0i2/demo1_bowtie2_index
+11/04/2015 09:58:52 AM - humann2.humann2 - INFO: TIMESTAMP: Completed 	database index 	:	 11	 seconds
+11/04/2015 09:58:52 AM - humann2.utilities - INFO: Execute command: /home/ljmciver/.local/bin/bowtie2 -q -x /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_humann2_temp_xvu0i2/demo1_bowtie2_index -U /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_knead/demo1.fastq -S /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_humann2_temp_xvu0i2/demo1_bowtie2_aligned.sam --very-sensitive
+11/04/2015 09:58:53 AM - humann2.humann2 - INFO: TIMESTAMP: Completed 	nucleotide alignment 	:	 1	 seconds
+11/04/2015 09:58:54 AM - humann2.humann2 - INFO: TIMESTAMP: Completed 	nucleotide alignment post-processing 	:	 0	 seconds
+11/04/2015 09:58:54 AM - humann2.humann2 - INFO: Total bugs from nucleotide alignment: 2
+11/04/2015 09:58:54 AM - humann2.humann2 - INFO: 
+g__Bacteroides.s__Bacteroides_thetaiotaomicron: 840 hits
+g__Bacteroides.s__Bacteroides_stercoris: 647 hits
+11/04/2015 09:58:54 AM - humann2.humann2 - INFO: Total gene families from nucleotide alignment: 1140
+11/04/2015 09:58:54 AM - humann2.humann2 - INFO: Unaligned reads after nucleotide alignment: 87.9848093083 %
+11/04/2015 09:58:54 AM - humann2.humann2 - INFO: Bypass translated search
+11/04/2015 09:58:54 AM - humann2.humann2 - INFO: Computing gene families ...
+11/04/2015 09:58:54 AM - humann2.store - INFO: 
+Total gene families  : 1140
+g__Bacteroides.s__Bacteroides_thetaiotaomicron : 675 gene families
+g__Bacteroides.s__Bacteroides_stercoris : 516 gene families
+11/04/2015 09:59:10 AM - humann2.humann2 - INFO: TIMESTAMP: Completed 	computing gene families 	:	 17	 seconds
+11/04/2015 09:59:10 AM - humann2.humann2 - INFO: Computing pathways abundance and coverage ...
+11/04/2015 09:59:10 AM - humann2.quantify.modules - INFO: Compute reaction scores for bug: g__Bacteroides.s__Bacteroides_thetaiotaomicron
+11/04/2015 09:59:11 AM - humann2.quantify.modules - INFO: Run MinPath on g__Bacteroides.s__Bacteroides_thetaiotaomicron
+11/04/2015 09:59:11 AM - humann2.quantify.modules - INFO: Compute reaction scores for bug: all
+11/04/2015 09:59:12 AM - humann2.quantify.modules - INFO: Run MinPath on all
+11/04/2015 09:59:12 AM - humann2.quantify.modules - INFO: Compute reaction scores for bug: g__Bacteroides.s__Bacteroides_stercoris
+11/04/2015 09:59:13 AM - humann2.quantify.modules - INFO: Run MinPath on g__Bacteroides.s__Bacteroides_stercoris
+11/04/2015 09:59:13 AM - humann2.utilities - INFO: Execute command: /usr/bin/python /home/ljmciver/.local/lib/python2.7/site-packages/humann2-0.5.0-py2.7.egg/humann2/quantify/MinPath12hmp.py -any /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_humann2_temp_xvu0i2/tmpSvZub8/tmpCvimr0 -map /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_humann2_temp_xvu0i2/tmpSvZub8/tmpZGHlK0 -report /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_humann2_temp_xvu0i2/tmpSvZub8/tmpgI2l4S -details /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_humann2_temp_xvu0i2/tmpSvZub8/tmpmzPz4J -mps /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_humann2_temp_xvu0i2/tmpSvZub8/tmpcKN2qu
+11/04/2015 09:59:13 AM - humann2.utilities - INFO: Execute command: /usr/bin/python /home/ljmciver/.local/lib/python2.7/site-packages/humann2-0.5.0-py2.7.egg/humann2/quantify/MinPath12hmp.py -any /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_humann2_temp_xvu0i2/tmpSvZub8/tmpgHOJ6_ -map /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_humann2_temp_xvu0i2/tmpSvZub8/tmpZGHlK0 -report /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_humann2_temp_xvu0i2/tmpSvZub8/tmpkjEu9_ -details /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_humann2_temp_xvu0i2/tmpSvZub8/tmplPT82d -mps /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_humann2_temp_xvu0i2/tmpSvZub8/tmpFZojx9
+11/04/2015 09:59:14 AM - humann2.utilities - INFO: Execute command: /usr/bin/python /home/ljmciver/.local/lib/python2.7/site-packages/humann2-0.5.0-py2.7.egg/humann2/quantify/MinPath12hmp.py -any /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_humann2_temp_xvu0i2/tmpSvZub8/tmpK1W0zN -map /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_humann2_temp_xvu0i2/tmpSvZub8/tmpZGHlK0 -report /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_humann2_temp_xvu0i2/tmpSvZub8/tmpHqpiEI -details /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_humann2_temp_xvu0i2/tmpSvZub8/tmpJYLnR2 -mps /work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_humann2_temp_xvu0i2/tmpSvZub8/tmpstagNz
+11/04/2015 09:59:15 AM - humann2.humann2 - INFO: TIMESTAMP: Completed 	computing pathways 	:	 5	 seconds
+11/04/2015 09:59:15 AM - humann2.humann2 - INFO: 
+Output files created: 
+/work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_genefamilies.tsv
+/work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_pathabundance.tsv
+/work/code/anadama/anadama_workflows/tests/data/wgs_raw/anadama_products/demo1_humann/demo1_pathcoverage.tsv
+
