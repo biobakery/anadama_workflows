@@ -15,15 +15,44 @@ def deepeq(answers, result):
 
 def file_equal(file1,file2):
     assert filecmp.cmp(file1, file2, shallow=False)
+    
+def read_file(file):
+    file_data=[]
+    with open(file) as file_handle:
+            file_data=[line for line in file_handle]
+    return file_data
+
+def read_file_precision(file,precision):
+    """ Read in the file converting floats to the given precision """
+    file_data=[]
+    with open(file) as file_handle:
+        for line in file_handle:
+            formatted_data=[]
+            for data in line.rstrip().split("\t"):
+                try:
+                    data_float=float(data)
+                    data="{:.{digits}f}".format(data_float, digits=precision)
+                except ValueError:
+                    pass
+                formatted_data.append(data)
+            file_data.append("\t".join(formatted_data))
+    return file_data
 
 def file_equal_ignore_line_order(file1,file2):
-    # read in file1
-    with open(file1) as file_handle:
-        file1_data=[line for line in file_handle]
+    file1_data=read_file(file1)
+    file2_data=read_file(file2)
 
-    # read in file2
-    with open(file2) as file_handle:
-        file2_data=[line for line in file_handle]
+    file1_data=sorted(file1_data)
+    file2_data=sorted(file2_data)
+
+    assert file1_data == file2_data
+
+def file_almost_equal_ignore_line_order(file1,file2):
+    """ Check if the files are almost equal to a precision for floats """
+    precision=6
+    
+    file1_data=read_file_precision(file1,precision)
+    file2_data=read_file_precision(file2,precision)
 
     file1_data=sorted(file1_data)
     file2_data=sorted(file2_data)
@@ -70,8 +99,9 @@ def list_subdirectories(folder):
     folder=os.path.abspath(folder)
     subdirs=[]
     for file in os.listdir(folder):
-        if os.path.isdir(file):
-            subdirs.append(os.path.join(folder,file))
+        path_to_file=os.path.join(folder,file)
+        if os.path.isdir(path_to_file):
+            subdirs.append(path_to_file)
     return sorted(subdirs)
 
 def pair_tsv_files(folder1,folder2,subdirectories=None):
@@ -157,6 +187,28 @@ def test_demultiplexed_usearch64_16S():
     benchmark_output_folder=os.path.join(data_folder(),"16S_demultiplexed","anadama_products_Usearch64_16S")
     for expected_result_file, actual_result_file in pair_tsv_files(benchmark_output_folder, output_folder):
         yield file_equal_ignore_line_order, actual_result_file, expected_result_file
+    
+    # remove the temp folder
+    remove_temp_folder(temp_directory)
+    
+def test_raw_wgs():
+    """ Test the wgs pipeline on a set of raw fastq samples """
+    
+    # create a temp directory to store output
+    temp_directory=tempfile.mkdtemp(prefix="anadama_workflows_test_wgs")
+    
+    input_files=os.path.join(data_folder(),"wgs_raw","*.fastq")
+    
+    # run the anadama command
+    command=["WGS","-f","raw_seq_files:glob:"+input_files,"-o","decontaminate.strategy:storage",
+        "-o","humann.bypass-translated-search:"]
+    output_folder=run_anadama_pipeline_command(command, temp_directory)
+        
+    # test the output files are as expected
+    # only check the main output tsv files
+    benchmark_output_folder=os.path.join(data_folder(),"wgs_raw","anadama_products_wgs_raw")
+    for expected_result_file, actual_result_file in pair_tsv_files(benchmark_output_folder, output_folder,subdirectories=True):
+        yield file_almost_equal_ignore_line_order, actual_result_file, expected_result_file
     
     # remove the temp folder
     remove_temp_folder(temp_directory)
