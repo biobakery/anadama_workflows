@@ -168,6 +168,12 @@ def test__to_merged_unamed_diff_default():
 def test__to_merged_stiched():
     """ Test stitch tagging """
     yield eq, pipelines._to_merged("2.fastq", "stitched"), "stitched.fastq"
+
+def test__to_merged_fullpath():
+    base = "/foo/bar/my_R1_project/"
+    a = pipelines._to_merged(base+"foobaz_2.fastq", "stitched")
+    b = base+"foobaz_stitched.fastq"
+    assert a == b 
  
 def test_demultiplexed_usearch64_16S():
     """ Test the usearch64 bit 16S pipeline on a set of demultiplexed samples
