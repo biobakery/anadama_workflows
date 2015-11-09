@@ -182,8 +182,7 @@ def pick_denovo_otus(execution_plan, fasta_in, otutab_out,
     # truncate 
     trunc_out = join(tmp_folder, "truncated.fa")
     if not truncate_opts.get("trunclen"):
-        with open(fasta_in) as f:
-            truncate_opts['trunclen'] = util.cutoff(f)
+        truncate_opts['trunclen'] = util.cutoff(fasta_in)
     truncate_opts['fastaout'] = trunc_out
     cmd = "usearch8 -fastx_truncate "+fasta_in+" "+dict_flags(truncate_opts)
     plan.step(cmd, [trunc_out], [fasta_in],
