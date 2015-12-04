@@ -101,6 +101,10 @@ class SampleMetadataMixin(object):
                 return self.sample_metadata
 
 
+def rm_common_prefix(list_fnames):
+    p = os.path.commonprefix(list_fnames)
+    return p, [ fname.lstrip(p) for fname in list_fnames ]
+
 def infer_pairs(list_fnames):
     one_files, two_files, notpairs = _regex_filter(list_fnames)
     if len(one_files) != len(two_files):
@@ -121,7 +125,8 @@ def _regex_filter(list_fnames):
     regex = re.compile(r'[-._ ][rR]?([12])[-._ ]')
     one, two, notpairs = list(), list(), list()
 
-    matches = zip( list_fnames, map(regex.search, list_fnames))
+    prefix, nopref = rm_common_prefix(list_fnames)
+    matches = zip( list_fnames, map(regex.search, nopref))
     for fname, regex_result in matches:
         if not regex_result:
             notpairs.append(fname)
