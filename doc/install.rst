@@ -37,7 +37,9 @@ Tools'``. Make sure you have ``git`` and ``hg`` (aka mercurial)
 installed, too.
 
 Sadly, you'll also need a JVM. Download and install the Oracle JVM
-v1.7.
+v1.7.  Version 1.7 comes with Java 7.  As of January 2016, use only
+release 7 and not 8.  JRE should be sufficient, as JDK is not
+required.
 
 It's best to install the dependencies required by
 ``anadama_workflows`` in a virtualenv_.
