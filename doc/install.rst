@@ -214,7 +214,7 @@ you've already installed ``docent``, you can skip that step::
   download_unpack 'https://github.com/biocore/qiime/archive/1.8.0.tar.gz'
   cd ~/anadama_dev
   docent -v \
-      -i 'numpy==1.7.1' -i' -e "~/anadama_env/src/qiime-1.8.0/"' \
+      -i 'numpy==1.7.1' -i' -e "~/anadama_dev/src/qiime-1.8.0/"' \
       -j ~/anadama_dev/src/biobakery-docent*/specs/qiime.json \
       -e ~/anadama_dev/src/qiime-1.8.0/env
 
