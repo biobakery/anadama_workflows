@@ -37,7 +37,7 @@ Tools'``. Make sure you have ``git`` and ``hg`` (aka mercurial)
 installed, too.
 
 Sadly, you'll also need a JVM. Download and install the Oracle JVM
-v1.7.  Version 1.7 comes with Java 7.  As of January 2016, use only
+v1.7.  Version 1.7 comes with Java 7.  (Updated 2016-Jan-25) Use only
 release 7 and not 8.  JRE should be sufficient, as JDK is not
 required.
 
@@ -299,4 +299,15 @@ found. Symlink them like so::
 
   sudo ln -sv /usr/include/freetype2/ft2build.h /usr/include/ft2build.h
 
+(Updated 2016-Jan-25) The "apt-get upgrade" step may download and install
+Oracle 8, which should not be used as of this date.  To remove Oracle 8
+and install Oracle 7, follow the steps below:
 
+1) sudo apt-get purge oracle-java8-installer
+2) sudo add-apt-repository ppa:webupd8team/java
+3) sudo apt-get update
+4) sudo apt-get install oracle-java7-installer
+
+If successful, the command "java -version" will result in this output:
+
+java version "1.7.0_80"
