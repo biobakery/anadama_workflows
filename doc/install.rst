@@ -50,6 +50,13 @@ Here's how we'll install a virtualenv::
   cd ~/anadama_env
   source bin/activate
 
+Next, we need to install the correct python dev package or the second
+"pip install" command below would fail.  As an example, let's assume
+that an Ubuntu 14.04 system has python 2.7 installed.  Execute the
+following command to install the corresponding dev package:
+::
+  sudo apt-get install python2.7-dev
+::
 Next, we'll install the python programs and libraries that orchestrate
 the workflows. That's just two commands::
 
