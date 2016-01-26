@@ -187,10 +187,17 @@ First up is ea-utils::
   # near the bottom
   # click on "downloads and binaries"
   # download ea-utils.1.1.2-806.tar.gz
+  #
+  # UPDATE 2016-Jan-26:  Google Code project has been shut down
+  # as of 2015-Jan-25.  Do not fetch the code from Google.  Go
+  # to https://github.com/earonesty/ea-utils and get the latest
+  # code.  However, as of this writing, there is no indication
+  # that the code from Github reflects the specific version
+  # needed here.
 
-  tar -xvzf ea-utils.1.1.2-806.tar.gz
-  cd ea-utils.1.1.2-806
-  make
+  unzip ea-utils-master.zip
+  cd ea-utils-master/clipper
+  sudo make install
   link fastq-join
   cd -
 
