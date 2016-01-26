@@ -190,10 +190,10 @@ First up is ea-utils::
   #
   # UPDATE 2016-Jan-26:  Google Code project has been shut down
   # as of 2015-Jan-25.  Do not fetch the code from Google.  Go
-  # to https://github.com/earonesty/ea-utils and get the latest
-  # code.  However, as of this writing, there is no indication
-  # that the code from Github reflects the specific version
-  # needed here.
+  # get this file: https://github.com/earonesty/ea-utils/archive/
+  # 88c9ad5e4ff51607e70cbe0f3acfcd2f8bd1a425.zip.  The instructions
+  # in this section are written based on this zip file, which may
+  # not be the same version as the tarball indicated above.
 
   unzip ea-utils-master.zip
   cd ea-utils-master/clipper
