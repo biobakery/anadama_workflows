@@ -197,7 +197,7 @@ First up is ea-utils::
 
   unzip ea-utils-master.zip
   cd ea-utils-master/clipper
-  sudo make install
+  make
   link fastq-join
   cd -
 
