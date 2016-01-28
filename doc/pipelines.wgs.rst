@@ -21,6 +21,7 @@ ____________________________
 
 ::
 
+   source ~/anadama_dev/bin/activate # Do this if you have not done so already
    mkdir docdemo
    cd docdemo
    wget 'http://huttenhower.sph.harvard.edu/biobakery-shop/anadama/wgs_functional_test.tgz'
