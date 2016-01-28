@@ -313,3 +313,15 @@ found. Symlink them like so::
 
   sudo ln -sv /usr/include/freetype2/ft2build.h /usr/include/ft2build.h
 
+(Updated 2016-Jan-28) The "apt-get upgrade" step may download and install
+Oracle 8, which should not be used as of now.  To downgrade Oracle 8 to 7,
+follow these steps:
+::
+  sudo apt-get purge oracle-java8-installer
+  sudo add-apt-repository ppa:webupd8team/java
+  sudo apt-get update
+  sudo apt-get install oracle-java7-installer
+
+If successful, the command "java -version" will result in this output:
+::
+  java version "1.7.0_80"
