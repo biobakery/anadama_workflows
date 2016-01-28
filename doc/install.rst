@@ -46,9 +46,16 @@ It's best to install the dependencies required by
 
 Here's how we'll install a virtualenv::
 
-  virtualenv ~/anadama_env
-  cd ~/anadama_env
+  virtualenv ~/anadama_dev
+  cd ~/anadama_dev
   source bin/activate
+
+Next, we need to install the correct python dev package or the second
+"pip install" command below would fail.  As an example, let's assume
+that an Ubuntu 14.04 system has python 2.7 installed.  Execute the
+following command to install the corresponding dev package:
+::
+  sudo apt-get install python2.7-dev
 
 Next, we'll install the python programs and libraries that orchestrate
 the workflows. That's just two commands::
@@ -69,7 +76,7 @@ WGS Pipeline
 For these steps, let's define some bash functions to ease our
 installation tasks::
 
-  function link() { ln -sv $(readlink -f "$1") ~/anadama_env/bin/; }
+  function link() { ln -sv $(readlink -f "$1") ~/anadama_dev/bin/; }
 
   function download_unpack() { wget -O- "$1" | tar -xvzf - ; }
 
@@ -113,7 +120,7 @@ Now we do humann2::
 
 And now we do KNEAD_data::
 
-  download_unpack https://bitbucket.org/biobakery/kneaddata/get/9f2bc13440e5.tar.gz
+  download_unpack https://bitbucket.org/biobakery/kneaddata/get/23bb8d3.tar.gz
   pip install -e biobakery-kneaddata-*/
 
   wget -O trimmomatic.zip 'http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.33.zip'
@@ -124,8 +131,8 @@ And now we do KNEAD_data::
   link jre1.7.0_80/bin/java
 
   # And we'll also need a human reference database
-  mkdir -pv ~/anadama_env/databases/bowtie2
-  cd ~/anadama_env/databases/bowtie2
+  mkdir -pv ~/anadama_dev/databases/bowtie2
+  cd ~/anadama_dev/databases/bowtie2
   download_unpack 'ftp://ftp.ncbi.nlm.nih.gov/genbank/genomes/Eukaryotes/vertebrates_mammals/Homo_sapiens/GRCh38/seqs_for_alignment_pipelines/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.bowtie_index.tar.gz'
   for file in *; do mv -iv $file $( echo "$file" | sed -e 's|GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.bowtie_index|humanGRCh38|g' ); done
 
@@ -136,14 +143,14 @@ you might install later (qiime). We'll get around this problem by using
 a script called ``docent``. We first install docent, then we install
 breadcrumbs::
 
-  cd ~/anadama_env/src/
+  cd ~/anadama_dev/src/
   download_unpack https://bitbucket.org/biobakery/docent/get/HEAD.tgz
   pip install -e biobakery-docent-*/
   
   download_unpack https://bitbucket.org/biobakery/breadcrumbs/get/ed59079c2e5e.tgz
-  cd ~/anadama_env
-  docent -e  ~/anadama_env/src/biobakery-breadcrumbs-ed59079c2e5e/env -v \
-      -i "-e ~/anadama_env/src/biobakery-breadcrumbs-ed59079c2e5e" \
+  cd ~/anadama_dev
+  docent -e  ~/anadama_dev/src/biobakery-breadcrumbs-ed59079c2e5e/env -v \
+      -i "-e ~/anadama_dev/src/biobakery-breadcrumbs-ed59079c2e5e" \
       -o bin/scriptConvertBetweenBIOMAndPCL.py \
       -o bin/scriptEnvToTable.py \
       -o bin/scriptManipulateTable.py \
@@ -160,7 +167,7 @@ That's all for the WGS Pipeline.
 For these steps, let's define some bash functions to ease our
 installation tasks::
 
-  function link() { ln -sv $(readlink -f "$1") ~/anadama_env/bin/; }
+  function link() { ln -sv $(readlink -f "$1") ~/anadama_dev/bin/; }
 
   function download_unpack() { wget -O- "$1" | tar -xvzf - ; }
 
@@ -180,9 +187,16 @@ First up is ea-utils::
   # near the bottom
   # click on "downloads and binaries"
   # download ea-utils.1.1.2-806.tar.gz
+  #
+  # UPDATE 2016-Jan-26:  Google Code project has been shut down
+  # as of 2015-Jan-25.  Do not fetch the code from Google.  Go
+  # get this file: https://github.com/earonesty/ea-utils/archive/
+  # 88c9ad5e4ff51607e70cbe0f3acfcd2f8bd1a425.zip.  The instructions
+  # in this section are written based on this zip file, which may
+  # not be the same version as the tarball indicated above.
 
-  tar -xvzf ea-utils.1.1.2-806.tar.gz
-  cd ea-utils.1.1.2-806
+  unzip ea-utils-master.zip
+  cd ea-utils-master/clipper
   make
   link fastq-join
   cd -
@@ -199,37 +213,37 @@ called ``docent``.We first install docent, then we install qiime. If
 you've already installed ``docent``, you can skip that step::
 
   # The docent install step. skip if you've already installed docent
-  cd ~/anadama_env/src
+  cd ~/anadama_dev/src
   download_unpack https://bitbucket.org/biobakery/docent/get/HEAD.tgz
   pip install -e biobakery-docent-*/
   
   # regardless of installing docent, run this step to install qiime
   download_unpack 'https://github.com/biocore/qiime/archive/1.8.0.tar.gz'
-  cd ~/anadama_env
+  cd ~/anadama_dev
   docent -v \
-      -i 'numpy==1.7.1' -i' -e "~/anadama_env/src/qiime-1.8.0/"' \
-      -j ~/anadama_env/src/biobakery-docent*/specs/qiime.json \
-      -e ~/anadama_env/src/qiime-1.8.0/env
+      -i 'numpy==1.7.1' -i' -e "~/anadama_dev/src/qiime-1.8.0/"' \
+      -j ~/anadama_dev/src/biobakery-docent*/specs/qiime.json \
+      -e ~/anadama_dev/src/qiime-1.8.0/env
 
   # Need to download some databases
-  mkdir -pv ~/anadama_env/databases/
-  cd ~/anadama_env/databases/
+  mkdir -pv ~/anadama_dev/databases/
+  cd ~/anadama_dev/databases/
   download_unpack 'ftp://greengenes.microbio.me/greengenes_release/gg_13_5/gg_13_5_otus.tar.gz'
 
 
 Finally, install picrust::
 
-  cd ~/anadama_env/src
+  cd ~/anadama_dev/src
   download_unpack 'https://github.com/picrust/picrust/releases/download/1.0.0/picrust-1.0.0.tar.gz'
   cd ../
   docent -v \
       -i "numpy==1.5.1" -i "biom-format==1.3.1" -i "cogent==1.5.3" \
-      -i "-e ~/anadama_env/src/picrust-1.0.0"  \
-      -j ~/anadama_env/src/biobakery-docent*/specs/picrust.json \
-      -e ~/anadama_env/src/picrust-1.0.0/env
+      -i "-e ~/anadama_dev/src/picrust-1.0.0"  \
+      -j ~/anadama_dev/src/biobakery-docent*/specs/picrust.json \
+      -e ~/anadama_dev/src/picrust-1.0.0/env
 
   # Finally, we install the last databases, but in an unusual spot
-  mkdir -pv ~/anadama_env/src/picrust-1.0.0/picrust/data
+  mkdir -pv ~/anadama_dev/src/picrust-1.0.0/picrust/data
   cd !$
   wget 'ftp://ftp.microbio.me/pub/picrust-references/picrust-1.0.0/16S_13_5_precalculated.tab.gz'
   wget 'ftp://ftp.microbio.me/pub/picrust-references/picrust-1.0.0/ko_13_5_precalculated.tab.gz'
@@ -245,18 +259,18 @@ ______________________________________________
 
 Change the file locations to where you've installed them. Like so::
 
-  # edit ~/anadama_env/src/anadama-workflows/anadama_workflows/settings.py
+  # edit ~/anadama_dev/src/anadama-workflows/anadama_workflows/settings.py
 
   class metaphlan2:
-      bowtie2db = "/home/user/anadama_env/bin/db_v20/mpa_v20_m200"
-      mpa_pkl   = "/home/user/anadama_env/bin/db_v20/mpa_v20_m200.pkl"
+      bowtie2db = "/home/user/anadama_dev/bin/db_v20/mpa_v20_m200"
+      mpa_pkl   = "/home/user/anadama_dev/bin/db_v20/mpa_v20_m200.pkl"
   class sixteen:
-      otu_taxonomy = "/home/user/anadama_env/databases/gg_13_5_otus/taxonomy/97_otu_taxonomy.txt"
-      otu_refseq   = "/home/user/anadama_env/databases/gg_13_5_otus/rep_set/97_otus.fasta"
+      otu_taxonomy = "/home/user/anadama_dev/databases/gg_13_5_otus/taxonomy/97_otu_taxonomy.txt"
+      otu_refseq   = "/home/user/anadama_dev/databases/gg_13_5_otus/rep_set/97_otus.fasta"
 
   class knead:
-      reference_db = "/home/user/anadama_env/databases/bowtie2/humanGRCh38"
-      trim_path = "/home/user/anadama_env/src/Trimmomatic-0.33/trimmomatic-0.33.jar"
+      reference_db = "/home/user/anadama_dev/databases/bowtie2/humanGRCh38"
+      trim_path = "/home/user/anadama_dev/src/Trimmomatic-0.33/trimmomatic-0.33.jar"
 
 
 
@@ -299,15 +313,17 @@ found. Symlink them like so::
 
   sudo ln -sv /usr/include/freetype2/ft2build.h /usr/include/ft2build.h
 
-(Updated 2016-Jan-25) The "apt-get upgrade" step may download and install
-Oracle 8, which should not be used as of this date.  To remove Oracle 8
-and install Oracle 7, follow the steps below:
+(Updated 2016-Jan-28) The "apt-get upgrade" step may download and install
+Oracle 8, which should not be used as of now.  To downgrade Oracle 8 to 7,
+follow these steps:
+::
 
-1) sudo apt-get purge oracle-java8-installer
-2) sudo add-apt-repository ppa:webupd8team/java
-3) sudo apt-get update
-4) sudo apt-get install oracle-java7-installer
+  sudo apt-get purge oracle-java8-installer
+  sudo add-apt-repository ppa:webupd8team/java
+  sudo apt-get update
+  sudo apt-get install oracle-java7-installer
 
 If successful, the command "java -version" will result in this output:
+::
 
-java version "1.7.0_80"
+  java version "1.7.0_80"
