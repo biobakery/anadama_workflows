@@ -317,6 +317,7 @@ found. Symlink them like so::
 Oracle 8, which should not be used as of now.  To downgrade Oracle 8 to 7,
 follow these steps:
 ::
+
   sudo apt-get purge oracle-java8-installer
   sudo add-apt-repository ppa:webupd8team/java
   sudo apt-get update
@@ -324,4 +325,5 @@ follow these steps:
 
 If successful, the command "java -version" will result in this output:
 ::
+
   java version "1.7.0_80"
