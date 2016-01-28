@@ -313,15 +313,3 @@ found. Symlink them like so::
 
   sudo ln -sv /usr/include/freetype2/ft2build.h /usr/include/ft2build.h
 
-(Updated 2016-Jan-25) The "apt-get upgrade" step may download and install
-Oracle 8, which should not be used as of this date.  To remove Oracle 8
-and install Oracle 7, follow the steps below::
-
-sudo apt-get purge oracle-java8-installer
-sudo add-apt-repository ppa:webupd8team/java
-sudo apt-get update
-sudo apt-get install oracle-java7-installer
-
-If successful, the command "java -version" will result in this output:
-
-java version "1.7.0_80"
