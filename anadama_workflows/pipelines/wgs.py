@@ -56,9 +56,7 @@ class WGSPipeline(Pipeline, SampleFilterMixin, SampleMetadataMixin):
             'infer': True
         },
         'sequence_convert': { },
-        'decontaminate':    {
-            "strategy": "memory"
-        },
+        'decontaminate':  { }, 
         'metaphlan2':       {
             'bt2_ps': 'very-sensitive',
             "nproc" : str(util.max_cpus),

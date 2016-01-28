@@ -287,8 +287,6 @@ def knead_data(infiles, output_basestr, scratch=None, **opts):
         "output-prefix": base,
         "output": output_basestr+"_knead",
         "reference-db": settings.workflows.knead.reference_db,
-        "strategy": "memory",
-        "logging": "WARNING"
     }
     default_opts.update(opts)
     
