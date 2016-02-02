@@ -272,6 +272,12 @@ def knead_data(infiles, output_basestr, scratch=None, **opts):
     :param output_basestr: String; Path to the directory and base
       filename where the output cleaned sequences will be saved.
 
+    In default_opts, the variable "reference-db" refers to the
+    location of the database that contains the settings for the
+    workflows.  The location can be passed either by command line
+    or by editing "input/_options/decontaminate.txt" in the skeleton
+    method.  Refer to http://huttenhower.sph.harvard.edu/docs/
+    anadama/your_own_pipeline.html for more information.
 
     External dependencies:
       - `kneaddata <https://bitbucket.org/biobakery/kneaddata>`_
