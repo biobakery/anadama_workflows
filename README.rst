@@ -1,1 +1,0 @@
-doc/landing-page.rst
